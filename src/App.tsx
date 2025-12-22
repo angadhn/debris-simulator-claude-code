@@ -3,6 +3,7 @@ import { OrbitalViewer } from './components/cesium/OrbitalViewer';
 import { SimulationViewer } from './components/simulation/SimulationViewer';
 import { ViewSwitcher } from './components/ui/ViewSwitcher';
 import './App.css'
+import './mobile.css'
 
 function App() {
   const viewMode = useUIStore(state => state.viewMode);
