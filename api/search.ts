@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getSpaceTrackClient } from './lib/space-track-client';
+import { getSpaceTrackClient } from './lib/space-track-client.js';
 
 export default async function handler(
   req: VercelRequest,

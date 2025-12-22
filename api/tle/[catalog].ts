@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getSpaceTrackClient } from '../lib/space-track-client';
+import { getSpaceTrackClient } from '../lib/space-track-client.js';
 
 // In-memory cache (will persist during function warm-up)
 const cache = new Map<string, { data: any; timestamp: number }>();
