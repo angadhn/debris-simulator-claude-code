@@ -25,9 +25,5 @@
         }
       ]
     }
-  ],
-  "env": {
-    "SPACETRACK_EMAIL": "@spacetrack_email",
-    "SPACETRACK_PASSWORD": "@spacetrack_password"
-  }
+  ]
 }
