@@ -1,0 +1,97 @@
+.app {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #000;
+  color: white;
+  overflow: hidden;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: #1a1a1a;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #fff;
+}
+
+.app-main {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.main-viewer {
+  width: 100%;
+  height: 100%;
+}
+
+.view-switcher {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.view-switcher-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.view-button {
+  padding: 0.5rem 1rem;
+  border: 1px solid #555;
+  background-color: #333;
+  color: white;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.view-button:hover {
+  background-color: #444;
+}
+
+.view-button.active {
+  background-color: #646cff;
+  border-color: #646cff;
+}
+
+.simulation-viewer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #111;
+}
+
+.simulation-placeholder {
+  text-align: center;
+  padding: 2rem;
+}
+
+.simulation-placeholder h2 {
+  color: #fff;
+  margin-bottom: 1rem;
+}
+
+.simulation-placeholder p {
+  color: #aaa;
+  margin-bottom: 2rem;
+}
+
+.placeholder-box {
+  padding: 2rem;
+  border: 2px dashed #555;
+  border-radius: 8px;
+  background-color: #222;
+  color: #aaa;
+}
