@@ -65,7 +65,7 @@ export class DebrisAPI {
    */
   static async healthCheck(): Promise<boolean> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/health`, {
+      const response = await axios.get(`${API_BASE_URL}/api/health`, {
         timeout: 5000,
       });
       return response.status === 200;
