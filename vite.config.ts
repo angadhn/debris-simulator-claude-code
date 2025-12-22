@@ -5,7 +5,9 @@ import { viteStaticCopy } from 'vite-plugin-static-copy'
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   // Use different base paths for development and production
-  const base = mode === 'production' ? '/debris-simulator-claude-code/' : '/';
+  // For Vercel: use root path
+  // For GitHub Pages: use repository path
+  const base = process.env.VERCEL ? '/' : (mode === 'production' ? '/debris-simulator-claude-code/' : '/');
 
   return {
     base,
