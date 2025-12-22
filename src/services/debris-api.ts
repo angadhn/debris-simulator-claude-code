@@ -73,6 +73,43 @@ export class DebrisAPI {
   }
 
   /**
+   * Get total object count from Space-Track
+   */
+  static async getObjectCount(catalog: string = 'active'): Promise<number> {
+    try {
+      const response = await axios.get<{ source: string; count: number }>(
+        `${API_BASE_URL}/api/count/${catalog}`,
+        { timeout: 30000 }
+      );
+      console.log(`Total ${catalog} objects: ${response.data.count} (from ${response.data.source})`);
+      return response.data.count;
+    } catch (error) {
+      console.error('Failed to get object count:', error);
+      return 0; // Return 0 on error instead of throwing
+    }
+  }
+
+  /**
+   * Search objects by name
+   */
+  static async searchByName(name: string, limit: number = 10): Promise<TLEData[]> {
+    try {
+      const response = await axios.get<{ query: string; count: number; data: TLEData[] }>(
+        `${API_BASE_URL}/api/search`,
+        {
+          params: { name, limit },
+          timeout: 30000,
+        }
+      );
+      console.log(`Found ${response.data.count} objects matching "${name}"`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Failed to search objects:', error);
+      throw new Error(`Failed to search objects: ${error}`);
+    }
+  }
+
+  /**
    * Clear the server-side cache
    */
   static async clearCache(): Promise<void> {

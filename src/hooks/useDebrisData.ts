@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useDebrisStore } from '../stores/debris-store';
 import { DebrisAPI } from '../services/debris-api';
+import { convertTLEArrayToDebrisObjects } from '../utils/tle-converter';
 
 /**
  * Hook to fetch and manage debris data
@@ -30,19 +31,7 @@ export function useDebrisData(
       const response = await DebrisAPI.getTLEData(catalog, limit, skipCache);
 
       // Convert TLEData to DebrisObject format
-      const debrisObjects = response.data.map((tle) => ({
-        noradId: parseInt(tle.NORAD_CAT_ID),
-        name: tle.OBJECT_NAME,
-        objectType: tle.OBJECT_TYPE as 'PAYLOAD' | 'ROCKET_BODY' | 'DEBRIS' | 'UNKNOWN',
-        tle: {
-          line1: tle.TLE_LINE1,
-          line2: tle.TLE_LINE2,
-        },
-        inclination: parseFloat(tle.INCLINATION),
-        apogee: parseFloat(tle.APOAPSIS),
-        perigee: parseFloat(tle.PERIAPSIS),
-        orbitPeriod: parseFloat(tle.PERIOD) * 60, // Convert minutes to seconds
-      }));
+      const debrisObjects = convertTLEArrayToDebrisObjects(response.data);
 
       setDebris(debrisObjects);
       setLoading(false);

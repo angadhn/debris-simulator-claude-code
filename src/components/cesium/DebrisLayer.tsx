@@ -12,23 +12,51 @@ interface DebrisLayerProps {
 export function DebrisLayer({ viewer }: DebrisLayerProps) {
   const debris = useDebrisStore((state) => state.debris);
   const filters = useDebrisStore((state) => state.filters);
+  const orbitFilters = useDebrisStore((state) => state.orbitFilters);
+  const sizeFilters = useDebrisStore((state) => state.sizeFilters);
+  const searchQuery = useDebrisStore((state) => state.searchQuery);
   const setSelectedDebrisId = useDebrisStore((state) => state.setSelectedDebrisId);
 
   const pointCollectionRef = useRef<Cesium.PointPrimitiveCollection | null>(null);
   const orbitPathRef = useRef<Cesium.Entity | null>(null);
   const debrisPositionsRef = useRef<DebrisPosition[]>([]);
 
-  // Filter debris based on filters
+  // Filter debris based on all filters
   const filteredDebris = useMemo(() => {
     return debris.filter((d) => {
+      // Type filter
       const type = d.objectType.toUpperCase();
       if (type.includes('PAYLOAD') && !filters.showPayload) return false;
       if ((type.includes('ROCKET') || type.includes('R/B')) && !filters.showRocketBody) return false;
       if (type.includes('DEBRIS') && !filters.showDebris) return false;
       if (!type.includes('PAYLOAD') && !type.includes('ROCKET') && !type.includes('DEBRIS') && !filters.showUnknown) return false;
+
+      // Orbit range filter (using apogee in km)
+      const apogee = d.apogee || 0;
+      if (apogee < 2000 && !orbitFilters.leo) return false;
+      if (apogee >= 2000 && apogee < 35000 && !orbitFilters.meo) return false;
+      if (apogee >= 35000 && !orbitFilters.geo) return false;
+
+      // Size filter (RCS_SIZE field)
+      // Note: Many objects don't have RCS_SIZE, so we'll allow them through if any size filter is active
+      const rcsSize = d.rcsSize?.toUpperCase();
+      if (rcsSize) {
+        if (rcsSize === 'SMALL' && !sizeFilters.small) return false;
+        if (rcsSize === 'MEDIUM' && !sizeFilters.medium) return false;
+        if (rcsSize === 'LARGE' && !sizeFilters.large) return false;
+      }
+
+      // Search filter (name or NORAD ID)
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesName = d.name.toLowerCase().includes(query);
+        const matchesNorad = d.noradId.toString().includes(query);
+        if (!matchesName && !matchesNorad) return false;
+      }
+
       return true;
     });
-  }, [debris, filters]);
+  }, [debris, filters, orbitFilters, sizeFilters, searchQuery]);
 
   // Render debris points - ONLY when viewer or filteredDebris changes
   useEffect(() => {

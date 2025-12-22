@@ -50,6 +50,63 @@ export class SpaceTrackClient {
     }
   }
 
+  async getObjectCount(catalog = 'active') {
+    await this.ensureAuthenticated();
+
+    console.log(`Getting object count for catalog: ${catalog}`);
+
+    try {
+      let queryUrl = `${SPACETRACK_BASE_URL}/basicspacedata/query/class/gp/`;
+
+      if (catalog === 'active') {
+        queryUrl += `DECAY_DATE/null-val/EPOCH/>now-30/orderby/NORAD_CAT_ID/limit/1/metadata/true`;
+      } else if (catalog === 'all') {
+        queryUrl += `DECAY_DATE/null-val/orderby/NORAD_CAT_ID/limit/1/metadata/true`;
+      } else {
+        queryUrl += `DECAY_DATE/null-val/orderby/NORAD_CAT_ID/limit/1/metadata/true`;
+      }
+
+      const response = await axios.get(queryUrl, {
+        headers: {
+          Cookie: this.cookieJar || '',
+        },
+        timeout: 30000,
+      });
+
+      // Space-Track returns metadata in request_metadata.Total field
+      const count = response.data?.request_metadata?.Total || 0;
+      console.log(`Total objects in ${catalog}: ${count}`);
+      return count;
+    } catch (error) {
+      console.error('Failed to get object count:', error.message);
+      throw new Error(`Failed to get object count: ${error.message}`);
+    }
+  }
+
+  async searchByName(name, limit = 10) {
+    await this.ensureAuthenticated();
+
+    console.log(`Searching for objects with name: ${name}`);
+
+    try {
+      // Search by object name (case-insensitive)
+      const queryUrl = `${SPACETRACK_BASE_URL}/basicspacedata/query/class/gp/OBJECT_NAME/~~${encodeURIComponent(name)}/DECAY_DATE/null-val/orderby/EPOCH%20desc/limit/${limit}/format/json`;
+
+      const response = await axios.get(queryUrl, {
+        headers: {
+          Cookie: this.cookieJar || '',
+        },
+        timeout: 30000,
+      });
+
+      console.log(`Found ${response.data.length} objects matching "${name}"`);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to search by name:', error.message);
+      throw new Error(`Failed to search by name: ${error.message}`);
+    }
+  }
+
   async getTLEData(catalog = 'active', limit = 10000) {
     await this.ensureAuthenticated();
 

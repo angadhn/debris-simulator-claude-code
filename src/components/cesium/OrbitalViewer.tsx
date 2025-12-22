@@ -7,6 +7,7 @@ import { useDebrisData } from '../../hooks/useDebrisData';
 import { DebrisLegend } from '../ui/DebrisLegend';
 import { DebrisInfoPanel } from '../ui/DebrisInfoPanel';
 import { TimeControls } from '../ui/TimeControls';
+import { DebrisSearchPanel } from '../ui/DebrisSearchPanel';
 import { useDebrisStore } from '../../stores/debris-store';
 
 // Global defined by Vite
@@ -31,6 +32,10 @@ export function OrbitalViewer({ className = '' }: OrbitalViewerProps) {
 
   // Get debris state for legend
   const debris = useDebrisStore((state) => state.debris);
+  const setOrbitFilters = useDebrisStore((state) => state.setOrbitFilters);
+  const setSizeFilters = useDebrisStore((state) => state.setSizeFilters);
+  const setSearchQuery = useDebrisStore((state) => state.setSearchQuery);
+  const totalObjectsAvailable = useDebrisStore((state) => state.totalObjectsAvailable);
 
   // Calculate object counts by type
   const objectCounts = useMemo(() => {
@@ -215,6 +220,13 @@ export function OrbitalViewer({ className = '' }: OrbitalViewerProps) {
           <DebrisLayer viewer={viewerRef.current} />
           {debris.length > 0 && (
             <>
+              <DebrisSearchPanel
+                onSearch={setSearchQuery}
+                onOrbitFilterChange={setOrbitFilters}
+                onSizeFilterChange={setSizeFilters}
+                totalObjects={totalObjectsAvailable || debris.length}
+                displayedObjects={debris.length}
+              />
               <DebrisLegend
                 objectCounts={objectCounts}
               />

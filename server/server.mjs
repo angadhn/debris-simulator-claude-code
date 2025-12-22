@@ -79,6 +79,74 @@ app.get('/api/tle/:catalog', async (req, res) => {
   }
 });
 
+// Get object count
+app.get('/api/count/:catalog', async (req, res) => {
+  try {
+    const { catalog } = req.params;
+    console.log(`Count request: catalog=${catalog}`);
+
+    // Check cache
+    const cacheKey = `count-${catalog}`;
+    const cached = cache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+      console.log('Returning cached count');
+      return res.json({
+        source: 'cache',
+        count: cached.count,
+      });
+    }
+
+    // Fetch from Space-Track
+    const count = await spaceTrackClient.getObjectCount(catalog);
+
+    // Cache the result
+    cache.set(cacheKey, {
+      count,
+      timestamp: Date.now(),
+    });
+
+    res.json({
+      source: 'spacetrack',
+      count,
+    });
+  } catch (error) {
+    console.error('Count endpoint error:', error);
+    res.status(500).json({
+      error: 'Failed to get object count',
+      message: error.message,
+    });
+  }
+});
+
+// Search objects by name
+app.get('/api/search', async (req, res) => {
+  try {
+    const { name, limit = 10 } = req.query;
+
+    if (!name) {
+      return res.status(400).json({
+        error: 'Missing required parameter: name',
+      });
+    }
+
+    console.log(`Search request: name=${name}, limit=${limit}`);
+
+    const results = await spaceTrackClient.searchByName(name, parseInt(limit));
+
+    res.json({
+      query: name,
+      count: results.length,
+      data: results,
+    });
+  } catch (error) {
+    console.error('Search endpoint error:', error);
+    res.status(500).json({
+      error: 'Failed to search objects',
+      message: error.message,
+    });
+  }
+});
+
 // Clear cache
 app.delete('/api/tle/cache', (req, res) => {
   const size = cache.size;

@@ -12,6 +12,7 @@ export interface DebrisObject {
   inclination?: number;                     // degrees
   apogee?: number;                          // km
   perigee?: number;                         // km
+  rcsSize?: string;                         // Radar Cross Section: SMALL, MEDIUM, LARGE
 }
 
 export interface OrbitData {
