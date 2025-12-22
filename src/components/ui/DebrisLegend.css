@@ -48,6 +48,28 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: calc(100vh - 250px);
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+/* Scrollbar styling */
+.legend-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.legend-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.legend-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.legend-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .object-count {
@@ -116,4 +138,112 @@
   text-align: center;
   font-style: italic;
   margin-top: 4px;
+}
+
+.type-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.expand-btn {
+  background: none;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 10px;
+  padding: 0;
+  margin-left: 4px;
+  transition: color 0.2s;
+}
+
+.expand-btn:hover {
+  color: white;
+}
+
+.size-filters {
+  margin-left: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 10px;
+  border-left: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.size-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  font-size: 12px;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.size-checkbox:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.size-checkbox input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.size-checkbox.active {
+  background: rgba(74, 144, 226, 0.2);
+  border-color: rgba(74, 144, 226, 0.5);
+}
+
+/* Filter section (for orbit filters) */
+.filter-section {
+  margin-bottom: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.filter-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #bbb;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  font-size: 13px;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.filter-checkbox:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.filter-checkbox input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.filter-checkbox.active {
+  background: rgba(74, 144, 226, 0.2);
+  border-color: rgba(74, 144, 226, 0.5);
 }

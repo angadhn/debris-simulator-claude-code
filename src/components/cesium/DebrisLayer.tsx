@@ -1,7 +1,7 @@
 import { useEffect, useRef, useMemo } from 'react';
 import * as Cesium from 'cesium';
 import { useDebrisStore } from '../../stores/debris-store';
-import { propagateAllDebris, getDebrisColor, generateOrbitPath } from '../../utils/orbital-propagation';
+import { propagateAllDebris, getDebrisColor, generateOrbitPath, propagatePosition } from '../../utils/orbital-propagation';
 import type { TLEData } from '../../services/debris-api';
 import type { DebrisPosition } from '../../utils/orbital-propagation';
 
@@ -13,38 +13,57 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
   const debris = useDebrisStore((state) => state.debris);
   const filters = useDebrisStore((state) => state.filters);
   const orbitFilters = useDebrisStore((state) => state.orbitFilters);
-  const sizeFilters = useDebrisStore((state) => state.sizeFilters);
   const searchQuery = useDebrisStore((state) => state.searchQuery);
+  const selectedDebrisId = useDebrisStore((state) => state.selectedDebrisId);
+  const isAnimating = useDebrisStore((state) => state.isAnimating);
+  const animationSpeed = useDebrisStore((state) => state.animationSpeed);
   const setSelectedDebrisId = useDebrisStore((state) => state.setSelectedDebrisId);
 
   const pointCollectionRef = useRef<Cesium.PointPrimitiveCollection | null>(null);
   const orbitPathRef = useRef<Cesium.Entity | null>(null);
   const debrisPositionsRef = useRef<DebrisPosition[]>([]);
+  const animatedEntityRef = useRef<Cesium.Entity | null>(null);
+  const preRenderListenerRef = useRef<(() => void) | null>(null);
 
   // Filter debris based on all filters
   const filteredDebris = useMemo(() => {
     return debris.filter((d) => {
-      // Type filter
+      // Determine object type
       const type = d.objectType.toUpperCase();
-      if (type.includes('PAYLOAD') && !filters.showPayload) return false;
-      if ((type.includes('ROCKET') || type.includes('R/B')) && !filters.showRocketBody) return false;
-      if (type.includes('DEBRIS') && !filters.showDebris) return false;
-      if (!type.includes('PAYLOAD') && !type.includes('ROCKET') && !type.includes('DEBRIS') && !filters.showUnknown) return false;
+      let filterType: 'payload' | 'rocketBody' | 'debris' | 'unknown';
+
+      if (type.includes('PAYLOAD')) {
+        filterType = 'payload';
+      } else if (type.includes('ROCKET') || type.includes('R/B')) {
+        filterType = 'rocketBody';
+      } else if (type.includes('DEBRIS')) {
+        filterType = 'debris';
+      } else {
+        filterType = 'unknown';
+      }
+
+      // Check if this type is enabled
+      if (!filters[filterType].enabled) return false;
+
+      // Check size filter for this type
+      const rcsSize = d.rcsSize?.toUpperCase();
+      const typeFilters = filters[filterType].sizes;
+
+      if (rcsSize) {
+        // Has RCS size - check specific size filter
+        if (rcsSize === 'SMALL' && !typeFilters.small) return false;
+        if (rcsSize === 'MEDIUM' && !typeFilters.medium) return false;
+        if (rcsSize === 'LARGE' && !typeFilters.large) return false;
+      } else {
+        // No RCS size - check unknown size filter
+        if (!typeFilters.unknown) return false;
+      }
 
       // Orbit range filter (using apogee in km)
       const apogee = d.apogee || 0;
       if (apogee < 2000 && !orbitFilters.leo) return false;
       if (apogee >= 2000 && apogee < 35000 && !orbitFilters.meo) return false;
       if (apogee >= 35000 && !orbitFilters.geo) return false;
-
-      // Size filter (RCS_SIZE field)
-      // Note: Many objects don't have RCS_SIZE, so we'll allow them through if any size filter is active
-      const rcsSize = d.rcsSize?.toUpperCase();
-      if (rcsSize) {
-        if (rcsSize === 'SMALL' && !sizeFilters.small) return false;
-        if (rcsSize === 'MEDIUM' && !sizeFilters.medium) return false;
-        if (rcsSize === 'LARGE' && !sizeFilters.large) return false;
-      }
 
       // Search filter (name or NORAD ID)
       if (searchQuery) {
@@ -56,7 +75,7 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
 
       return true;
     });
-  }, [debris, filters, orbitFilters, sizeFilters, searchQuery]);
+  }, [debris, filters, orbitFilters, searchQuery]);
 
   // Render debris points - ONLY when viewer or filteredDebris changes
   useEffect(() => {
@@ -160,9 +179,17 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
           orbitPathRef.current = null;
         }
 
-        // Generate orbit path
+        // Find the debris object to get orbital period
+        const debrisObject = debris.find(d => d.noradId === noradId);
+        const orbitPeriod = debrisObject?.orbitPeriod || 5400; // Default to 90 minutes if not found
+
+        // Generate orbit path for exactly one orbital period
         const currentTime = Cesium.JulianDate.toDate(viewer.clock.currentTime);
-        const orbitPositions = generateOrbitPath(selectedPos.satrec, currentTime, 6000, 60);
+        // Sample every period/200 to get ~200 points per orbit
+        const samplingInterval = Math.max(Math.floor(orbitPeriod / 200), 10); // At least 10 seconds between samples
+        const orbitPositions = generateOrbitPath(selectedPos.satrec, currentTime, orbitPeriod, samplingInterval);
+
+        console.log(`Generating orbit for ${orbitPeriod}s period with ${samplingInterval}s sampling (${Math.floor(orbitPeriod / samplingInterval)} points)`);
 
         if (orbitPositions.length < 2) {
           console.warn('Not enough orbit positions generated');
@@ -209,6 +236,109 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
       }
     };
   }, [viewer]);
+
+  // Animation system
+  useEffect(() => {
+    if (!viewer || !isAnimating || !selectedDebrisId) {
+      // Stop animation
+      if (preRenderListenerRef.current) {
+        viewer?.scene.preRender.removeEventListener(preRenderListenerRef.current);
+        preRenderListenerRef.current = null;
+      }
+      if (animatedEntityRef.current && viewer) {
+        viewer.entities.remove(animatedEntityRef.current);
+        animatedEntityRef.current = null;
+      }
+      // Restore point collection opacity
+      if (pointCollectionRef.current) {
+        for (let i = 0; i < pointCollectionRef.current.length; i++) {
+          const point = pointCollectionRef.current.get(i);
+          point.color = getDebrisColor(point.id ?
+            debrisPositionsRef.current.find(p => parseInt(p.noradId) === point.id)?.objectType || '' : ''
+          );
+        }
+      }
+      return;
+    }
+
+    console.log(`Starting animation for debris ${selectedDebrisId}`);
+
+    // Find selected debris
+    const selectedPos = debrisPositionsRef.current.find(
+      (p) => parseInt(p.noradId) === selectedDebrisId
+    );
+
+    if (!selectedPos) {
+      console.warn(`Could not find debris for animation: ${selectedDebrisId}`);
+      return;
+    }
+
+    // Set Cesium clock multiplier
+    viewer.clock.multiplier = animationSpeed;
+    viewer.clock.shouldAnimate = true;
+
+    // Dim non-selected debris
+    if (pointCollectionRef.current) {
+      for (let i = 0; i < pointCollectionRef.current.length; i++) {
+        const point = pointCollectionRef.current.get(i);
+        if (point.id === selectedDebrisId) {
+          point.show = false; // Hide the static point for selected debris
+        } else {
+          // Dim other points
+          const originalColor = getDebrisColor(point.id ?
+            debrisPositionsRef.current.find(p => parseInt(p.noradId) === point.id)?.objectType || '' : ''
+          );
+          point.color = originalColor.withAlpha(0.2);
+        }
+      }
+    }
+
+    // Create animated entity for selected debris
+    const animatedEntity = viewer.entities.add({
+      name: `Animated ${selectedPos.name}`,
+      position: selectedPos.position,
+      point: {
+        pixelSize: 8,
+        color: Cesium.Color.YELLOW,
+        outlineColor: Cesium.Color.WHITE,
+        outlineWidth: 2,
+      },
+    });
+
+    animatedEntityRef.current = animatedEntity;
+
+    // Set up animation loop
+    const preRenderListener = () => {
+      if (!viewer || !animatedEntity || !selectedPos) return;
+
+      // Get current simulation time
+      const currentTime = Cesium.JulianDate.toDate(viewer.clock.currentTime);
+
+      // Propagate position
+      const result = propagatePosition(selectedPos.satrec, currentTime);
+
+      if (result) {
+        animatedEntity.position = new Cesium.ConstantPositionProperty(result.position);
+      }
+    };
+
+    viewer.scene.preRender.addEventListener(preRenderListener);
+    preRenderListenerRef.current = preRenderListener;
+
+    console.log(`Animation started, clock multiplier: ${animationSpeed}x`);
+
+    // Cleanup
+    return () => {
+      if (preRenderListenerRef.current && viewer) {
+        viewer.scene.preRender.removeEventListener(preRenderListenerRef.current);
+        preRenderListenerRef.current = null;
+      }
+      if (animatedEntityRef.current && viewer) {
+        viewer.entities.remove(animatedEntityRef.current);
+        animatedEntityRef.current = null;
+      }
+    };
+  }, [viewer, isAnimating, selectedDebrisId, animationSpeed]);
 
   return null;
 }

@@ -32,8 +32,8 @@ export function OrbitalViewer({ className = '' }: OrbitalViewerProps) {
 
   // Get debris state for legend
   const debris = useDebrisStore((state) => state.debris);
+  const orbitFilters = useDebrisStore((state) => state.orbitFilters);
   const setOrbitFilters = useDebrisStore((state) => state.setOrbitFilters);
-  const setSizeFilters = useDebrisStore((state) => state.setSizeFilters);
   const setSearchQuery = useDebrisStore((state) => state.setSearchQuery);
   const totalObjectsAvailable = useDebrisStore((state) => state.totalObjectsAvailable);
 
@@ -127,14 +127,6 @@ export function OrbitalViewer({ className = '' }: OrbitalViewerProps) {
           selectionIndicator: false,
           navigationHelpButton: false,
           navigationInstructionsInitiallyVisible: false,
-          
-          // Use basic imagery instead of Ion for now
-          imageryProvider: new Cesium.OpenStreetMapImageryProvider({
-            url: 'https://a.tile.openstreetmap.org/'
-          }),
-          
-          // Don't use world terrain to avoid Ion dependency
-          terrainProvider: new Cesium.EllipsoidTerrainProvider(),
         });
 
         console.log('Cesium viewer created successfully');
@@ -222,13 +214,13 @@ export function OrbitalViewer({ className = '' }: OrbitalViewerProps) {
             <>
               <DebrisSearchPanel
                 onSearch={setSearchQuery}
-                onOrbitFilterChange={setOrbitFilters}
-                onSizeFilterChange={setSizeFilters}
                 totalObjects={totalObjectsAvailable || debris.length}
                 displayedObjects={debris.length}
               />
               <DebrisLegend
                 objectCounts={objectCounts}
+                orbitFilters={orbitFilters}
+                onOrbitFilterChange={setOrbitFilters}
               />
               <DebrisInfoPanel />
               <TimeControls viewer={viewerRef.current} />

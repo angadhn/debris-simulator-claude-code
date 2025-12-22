@@ -1,24 +1,27 @@
 import { useEffect, useState } from 'react';
 import * as Cesium from 'cesium';
+import { useDebrisStore } from '../../stores/debris-store';
 import './TimeControls.css';
 
 interface TimeControlsProps {
   viewer: Cesium.Viewer | null;
 }
 
-const TIME_MULTIPLIERS = [1, 10, 100, 1000, 10000];
+const TIME_MULTIPLIERS = [60, 300, 600, 1800, 3600]; // 1 min, 5 min, 10 min, 30 min, 1 hour per second
 
 export function TimeControls({ viewer }: TimeControlsProps) {
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [multiplierIndex, setMultiplierIndex] = useState(1); // Start at 10x
+  const selectedDebrisId = useDebrisStore((state) => state.selectedDebrisId);
+  const isAnimating = useDebrisStore((state) => state.isAnimating);
+  const setIsAnimating = useDebrisStore((state) => state.setIsAnimating);
+  const setAnimationSpeed = useDebrisStore((state) => state.setAnimationSpeed);
+  const setSelectedDebrisId = useDebrisStore((state) => state.setSelectedDebrisId);
+
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const [multiplierIndex, setMultiplierIndex] = useState(0); // Start at 60x
+  const [showInfo, setShowInfo] = useState(false);
 
   useEffect(() => {
     if (!viewer) return;
-
-    // Set initial clock multiplier
-    viewer.clock.multiplier = TIME_MULTIPLIERS[multiplierIndex];
-    viewer.clock.shouldAnimate = isPlaying;
 
     // Update current time display
     const interval = setInterval(() => {
@@ -28,57 +31,121 @@ export function TimeControls({ viewer }: TimeControlsProps) {
     }, 100);
 
     return () => clearInterval(interval);
-  }, [viewer, multiplierIndex, isPlaying]);
+  }, [viewer]);
 
   const handlePlayPause = () => {
-    if (!viewer) return;
-    const newIsPlaying = !isPlaying;
-    setIsPlaying(newIsPlaying);
-    viewer.clock.shouldAnimate = newIsPlaying;
+    if (!selectedDebrisId) {
+      console.warn('Please select a debris object first');
+      return;
+    }
+    setIsAnimating(!isAnimating);
   };
 
   const handleSpeedChange = (direction: 'slower' | 'faster') => {
     if (direction === 'faster' && multiplierIndex < TIME_MULTIPLIERS.length - 1) {
       const newIndex = multiplierIndex + 1;
       setMultiplierIndex(newIndex);
-      if (viewer) {
-        viewer.clock.multiplier = TIME_MULTIPLIERS[newIndex];
-      }
+      setAnimationSpeed(TIME_MULTIPLIERS[newIndex]);
     } else if (direction === 'slower' && multiplierIndex > 0) {
       const newIndex = multiplierIndex - 1;
       setMultiplierIndex(newIndex);
-      if (viewer) {
-        viewer.clock.multiplier = TIME_MULTIPLIERS[newIndex];
-      }
+      setAnimationSpeed(TIME_MULTIPLIERS[newIndex]);
     }
   };
 
   const handleReset = () => {
     if (!viewer) return;
+    // Stop animation
+    setIsAnimating(false);
+    // Clear selection
+    setSelectedDebrisId(null);
+    // Reset time to now
     viewer.clock.currentTime = Cesium.JulianDate.now();
+    viewer.clock.multiplier = 1;
+    viewer.clock.shouldAnimate = false;
     setCurrentTime(new Date());
+    setMultiplierIndex(0);
   };
 
   const formatTime = (date: Date) => {
     return date.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
   };
 
+  const formatSpeed = (multiplier: number) => {
+    if (multiplier >= 3600) return `${multiplier / 3600}h/s`;
+    if (multiplier >= 60) return `${multiplier / 60}m/s`;
+    return `${multiplier}x`;
+  };
+
   const currentMultiplier = TIME_MULTIPLIERS[multiplierIndex];
+
+  // Hide if no debris selected
+  if (!selectedDebrisId) {
+    return null;
+  }
 
   return (
     <div className="time-controls">
       <div className="time-display">
         <div className="current-time">{formatTime(currentTime)}</div>
         <div className="time-speed">
-          Speed: {currentMultiplier >= 1000 ? `${currentMultiplier / 1000}k` : currentMultiplier}x
+          {isAnimating ? `Animating: ${formatSpeed(currentMultiplier)}` : 'Animation Paused'}
+          <button
+            className="info-btn"
+            onClick={() => setShowInfo(!showInfo)}
+            title="About TLE and SGP4"
+          >
+            ⓘ
+          </button>
         </div>
       </div>
+
+      {showInfo && (
+        <div className="info-panel">
+          <div className="info-content">
+            <h4>How This Works</h4>
+            <p>
+              <strong>TLE (Two-Line Element Set):</strong> Orbital data from{' '}
+              <a href="https://www.space-track.org" target="_blank" rel="noopener noreferrer">
+                Space-Track.org
+              </a>{' '}
+              containing position, velocity, and decay information.
+            </p>
+            <p>
+              <strong>SGP4 Algorithm:</strong> Mathematical model that predicts satellite positions
+              from TLE data. Used for all satellites (LEO/MEO/GEO).
+            </p>
+            <p>
+              <strong>Note:</strong> This shows <em>predicted</em> positions based on TLE data, not
+              real-time telemetry. Accuracy decreases as TLE ages.
+            </p>
+            <div className="info-links">
+              Learn more:
+              <a
+                href="https://en.wikipedia.org/wiki/Two-line_element_set"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                TLE Format
+              </a>
+              {' • '}
+              <a
+                href="https://en.wikipedia.org/wiki/Simplified_perturbations_models"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                SGP4 Model
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="control-buttons">
         <button
           className="control-btn"
           onClick={() => handleSpeedChange('slower')}
-          disabled={multiplierIndex === 0}
+          disabled={multiplierIndex === 0 || !isAnimating}
           title="Slower"
         >
           ◄◄
@@ -87,15 +154,15 @@ export function TimeControls({ viewer }: TimeControlsProps) {
         <button
           className="control-btn play-pause"
           onClick={handlePlayPause}
-          title={isPlaying ? 'Pause' : 'Play'}
+          title={isAnimating ? 'Pause Animation' : 'Play Animation'}
         >
-          {isPlaying ? '❚❚' : '▶'}
+          {isAnimating ? '❚❚' : '▶'}
         </button>
 
         <button
           className="control-btn"
           onClick={() => handleSpeedChange('faster')}
-          disabled={multiplierIndex === TIME_MULTIPLIERS.length - 1}
+          disabled={multiplierIndex === TIME_MULTIPLIERS.length - 1 || !isAnimating}
           title="Faster"
         >
           ►►
@@ -104,9 +171,9 @@ export function TimeControls({ viewer }: TimeControlsProps) {
         <button
           className="control-btn reset"
           onClick={handleReset}
-          title="Reset to current time"
+          title="Stop animation and clear selection"
         >
-          ⟲
+          ⏹
         </button>
       </div>
     </div>

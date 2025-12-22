@@ -44,7 +44,7 @@ export function propagatePosition(
     // Propagate using SGP4
     const positionAndVelocity = satellite.propagate(satrec, time);
 
-    if (!positionAndVelocity.position || satellite.error) {
+    if (!positionAndVelocity || !positionAndVelocity.position || !positionAndVelocity.velocity) {
       return null;
     }
 

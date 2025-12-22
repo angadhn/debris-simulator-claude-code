@@ -25,6 +25,10 @@
   }
 }
 
+.debris-info-panel.collapsed {
+  min-width: auto;
+}
+
 .info-header {
   display: flex;
   justify-content: space-between;
@@ -34,12 +38,41 @@
   border-bottom: 2px solid #4a90e2;
 }
 
+.debris-info-panel.collapsed .info-header {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
 .info-header h3 {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
   color: #4a90e2;
   flex: 1;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.collapse-btn {
+  background: rgba(74, 144, 226, 0.2);
+  border: 1px solid rgba(74, 144, 226, 0.4);
+  color: #4a90e2;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.collapse-btn:hover {
+  background: rgba(74, 144, 226, 0.3);
+  border-color: rgba(74, 144, 226, 0.6);
 }
 
 .close-btn {
@@ -122,4 +155,16 @@
   text-align: center;
   font-style: italic;
   margin-top: 5px;
+}
+
+.tle-epoch {
+  background: rgba(74, 144, 226, 0.1);
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.tle-age {
+  color: #aaa;
+  font-size: 11px;
 }

@@ -1,23 +1,40 @@
 import { create } from 'zustand';
 import type { DebrisObject } from '../types/debris';
 
+interface TypeSizeFilters {
+  small: boolean;
+  medium: boolean;
+  large: boolean;
+  unknown: boolean;
+}
+
 interface DebrisFilters {
-  showPayload: boolean;
-  showRocketBody: boolean;
-  showDebris: boolean;
-  showUnknown: boolean;
+  payload: {
+    enabled: boolean;
+    expanded: boolean;
+    sizes: TypeSizeFilters;
+  };
+  rocketBody: {
+    enabled: boolean;
+    expanded: boolean;
+    sizes: TypeSizeFilters;
+  };
+  debris: {
+    enabled: boolean;
+    expanded: boolean;
+    sizes: TypeSizeFilters;
+  };
+  unknown: {
+    enabled: boolean;
+    expanded: boolean;
+    sizes: TypeSizeFilters;
+  };
 }
 
 interface OrbitFilters {
   leo: boolean;
   meo: boolean;
   geo: boolean;
-}
-
-interface SizeFilters {
-  small: boolean;
-  medium: boolean;
-  large: boolean;
 }
 
 interface DebrisStore {
@@ -27,9 +44,10 @@ interface DebrisStore {
   selectedDebrisId: number | null;
   filters: DebrisFilters;
   orbitFilters: OrbitFilters;
-  sizeFilters: SizeFilters;
   searchQuery: string;
   totalObjectsAvailable: number;
+  isAnimating: boolean;
+  animationSpeed: number; // Multiplier for time (1 = real-time, 60 = 1 min per second)
 
   setDebris: (debris: DebrisObject[]) => void;
   setLoading: (loading: boolean) => void;
@@ -39,10 +57,18 @@ interface DebrisStore {
   setSelectedDebrisId: (id: number | null) => void;
   setFilters: (filters: DebrisFilters) => void;
   setOrbitFilters: (filters: OrbitFilters) => void;
-  setSizeFilters: (filters: SizeFilters) => void;
   setSearchQuery: (query: string) => void;
   setTotalObjectsAvailable: (total: number) => void;
+  setIsAnimating: (isAnimating: boolean) => void;
+  setAnimationSpeed: (speed: number) => void;
 }
+
+const createDefaultSizeFilters = (): TypeSizeFilters => ({
+  small: true,
+  medium: true,
+  large: true,
+  unknown: true,
+});
 
 export const useDebrisStore = create<DebrisStore>((set) => ({
   debris: [],
@@ -50,23 +76,36 @@ export const useDebrisStore = create<DebrisStore>((set) => ({
   error: null,
   selectedDebrisId: null,
   filters: {
-    showPayload: true,
-    showRocketBody: true,
-    showDebris: true,
-    showUnknown: true,
+    payload: {
+      enabled: true,
+      expanded: false,
+      sizes: createDefaultSizeFilters(),
+    },
+    rocketBody: {
+      enabled: true,
+      expanded: false,
+      sizes: createDefaultSizeFilters(),
+    },
+    debris: {
+      enabled: true,
+      expanded: false,
+      sizes: createDefaultSizeFilters(),
+    },
+    unknown: {
+      enabled: true,
+      expanded: false,
+      sizes: createDefaultSizeFilters(),
+    },
   },
   orbitFilters: {
     leo: true,
     meo: true,
     geo: true,
   },
-  sizeFilters: {
-    small: true,
-    medium: true,
-    large: true,
-  },
   searchQuery: '',
   totalObjectsAvailable: 0,
+  isAnimating: false,
+  animationSpeed: 60, // Default: 1 minute per second
 
   setDebris: (debris) => set({ debris }),
   setLoading: (loading) => set({ loading }),
@@ -83,7 +122,8 @@ export const useDebrisStore = create<DebrisStore>((set) => ({
   setSelectedDebrisId: (id) => set({ selectedDebrisId: id }),
   setFilters: (filters) => set({ filters }),
   setOrbitFilters: (orbitFilters) => set({ orbitFilters }),
-  setSizeFilters: (sizeFilters) => set({ sizeFilters }),
   setSearchQuery: (searchQuery) => set({ searchQuery }),
   setTotalObjectsAvailable: (totalObjectsAvailable) => set({ totalObjectsAvailable }),
+  setIsAnimating: (isAnimating) => set({ isAnimating }),
+  setAnimationSpeed: (animationSpeed) => set({ animationSpeed }),
 }));

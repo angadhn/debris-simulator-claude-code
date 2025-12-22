@@ -33,6 +33,64 @@
 .time-speed {
   font-size: 11px;
   color: #aaa;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-btn {
+  background: none;
+  border: none;
+  color: #4a90e2;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 4px;
+  transition: all 0.2s;
+}
+
+.info-btn:hover {
+  color: #6bb0ff;
+  transform: scale(1.2);
+}
+
+.info-panel {
+  margin-top: 8px;
+  padding: 12px;
+  background: rgba(74, 144, 226, 0.1);
+  border: 1px solid rgba(74, 144, 226, 0.3);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.info-content h4 {
+  margin: 0 0 8px 0;
+  color: #4a90e2;
+  font-size: 13px;
+}
+
+.info-content p {
+  margin: 0 0 8px 0;
+}
+
+.info-content p:last-child {
+  margin-bottom: 0;
+}
+
+.info-links {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 11px;
+}
+
+.info-links a {
+  color: #4a90e2;
+  text-decoration: none;
+}
+
+.info-links a:hover {
+  text-decoration: underline;
 }
 
 .control-buttons {

@@ -4,48 +4,23 @@ import { useDebrisStore } from '../../stores/debris-store';
 import { convertTLEArrayToDebrisObjects } from '../../utils/tle-converter';
 import './DebrisSearchPanel.css';
 
-interface OrbitFilters {
-  leo: boolean;
-  meo: boolean;
-  geo: boolean;
-}
-
-interface SizeFilters {
-  small: boolean;
-  medium: boolean;
-  large: boolean;
-}
-
 interface DebrisSearchPanelProps {
   onSearch: (query: string) => void;
-  onOrbitFilterChange: (filters: OrbitFilters) => void;
-  onSizeFilterChange: (filters: SizeFilters) => void;
   totalObjects: number;
   displayedObjects: number;
 }
 
 export function DebrisSearchPanel({
   onSearch,
-  onOrbitFilterChange,
-  onSizeFilterChange,
   totalObjects,
   displayedObjects,
 }: DebrisSearchPanelProps) {
   const addDebrisObjects = useDebrisStore((state) => state.addDebrisObjects);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [realTotalCount, setRealTotalCount] = useState<number | null>(null);
   const [isLoadingCount, setIsLoadingCount] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
-  const [orbitFilters, setOrbitFilters] = useState<OrbitFilters>({
-    leo: true,
-    meo: true,
-    geo: true,
-  });
-  const [sizeFilters, setSizeFilters] = useState<SizeFilters>({
-    small: true,
-    medium: true,
-    large: true,
-  });
 
   // Fetch real count from Space-Track on mount
   useEffect(() => {
@@ -102,18 +77,6 @@ export function DebrisSearchPanel({
     }
   };
 
-  const handleOrbitFilterToggle = (orbit: keyof OrbitFilters) => {
-    const newFilters = { ...orbitFilters, [orbit]: !orbitFilters[orbit] };
-    setOrbitFilters(newFilters);
-    onOrbitFilterChange(newFilters);
-  };
-
-  const handleSizeFilterToggle = (size: keyof SizeFilters) => {
-    const newFilters = { ...sizeFilters, [size]: !sizeFilters[size] };
-    setSizeFilters(newFilters);
-    onSizeFilterChange(newFilters);
-  };
-
   return (
     <div className="debris-search-panel">
       <div className="search-header">
@@ -141,66 +104,6 @@ export function DebrisSearchPanel({
         >
           {isSearching ? 'Searching...' : 'Search'}
         </button>
-      </div>
-
-      <div className="filter-section">
-        <div className="filter-section-title">Orbit Range</div>
-        <div className="filter-options">
-          <label className={`filter-checkbox ${orbitFilters.leo ? 'active' : ''}`}>
-            <input
-              type="checkbox"
-              checked={orbitFilters.leo}
-              onChange={() => handleOrbitFilterToggle('leo')}
-            />
-            <span>LEO (&lt;2,000 km)</span>
-          </label>
-          <label className={`filter-checkbox ${orbitFilters.meo ? 'active' : ''}`}>
-            <input
-              type="checkbox"
-              checked={orbitFilters.meo}
-              onChange={() => handleOrbitFilterToggle('meo')}
-            />
-            <span>MEO (2k-36k km)</span>
-          </label>
-          <label className={`filter-checkbox ${orbitFilters.geo ? 'active' : ''}`}>
-            <input
-              type="checkbox"
-              checked={orbitFilters.geo}
-              onChange={() => handleOrbitFilterToggle('geo')}
-            />
-            <span>GEO (~36k km)</span>
-          </label>
-        </div>
-      </div>
-
-      <div className="filter-section">
-        <div className="filter-section-title">Object Size (RCS)</div>
-        <div className="filter-options">
-          <label className={`filter-checkbox ${sizeFilters.small ? 'active' : ''}`}>
-            <input
-              type="checkbox"
-              checked={sizeFilters.small}
-              onChange={() => handleSizeFilterToggle('small')}
-            />
-            <span>Small</span>
-          </label>
-          <label className={`filter-checkbox ${sizeFilters.medium ? 'active' : ''}`}>
-            <input
-              type="checkbox"
-              checked={sizeFilters.medium}
-              onChange={() => handleSizeFilterToggle('medium')}
-            />
-            <span>Medium</span>
-          </label>
-          <label className={`filter-checkbox ${sizeFilters.large ? 'active' : ''}`}>
-            <input
-              type="checkbox"
-              checked={sizeFilters.large}
-              onChange={() => handleSizeFilterToggle('large')}
-            />
-            <span>Large</span>
-          </label>
-        </div>
       </div>
 
       <div className="total-count">

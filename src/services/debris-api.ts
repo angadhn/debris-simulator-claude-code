@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3001';
+// Use relative path for production (Vercel), localhost for development
+const API_BASE_URL = import.meta.env.PROD
+  ? '' // Empty string for relative paths in production
+  : 'http://localhost:3001';
 
 export interface TLEData {
   NORAD_CAT_ID: string;
