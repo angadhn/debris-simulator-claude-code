@@ -29,8 +29,8 @@ const cache = new Map();
 const CACHE_TTL = 1000 * 60 * 60 * 24; // 24 hours
 
 // Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', service: 'debris-simulator-api', timestamp: new Date().toISOString() });
 });
 
 // Get TLE data
