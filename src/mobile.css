@@ -99,10 +99,10 @@
     bottom: 0 !important;
     left: 0 !important;
     right: unset !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    border-radius: 0 !important;
-    padding: 10px !important;
+    width: calc(100% - 80px) !important;
+    max-width: calc(100% - 80px) !important;
+    border-radius: 0 8px 0 0 !important;
+    padding: 8px !important;
   }
 
   .time-controls-content {
