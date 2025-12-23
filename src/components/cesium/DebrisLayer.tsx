@@ -255,7 +255,6 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
 
     // Pan camera to debris object while maintaining home screen zoom level
     // Position camera at fixed distance from Earth center (not debris)
-    const earthCenter = Cesium.Cartesian3.ZERO;
     const debrisDirection = Cesium.Cartesian3.normalize(
       selectedPos.position,
       new Cesium.Cartesian3()
