@@ -269,7 +269,7 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
       offset: new Cesium.HeadingPitchRange(
         0,
         Cesium.Math.toRadians(-45),
-        15000000 // 15,000 km distance from object
+        25000000 // 25,000 km distance from object - wider view
       ),
     });
   }, [viewer, selectedDebrisId]);
