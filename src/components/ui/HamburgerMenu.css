@@ -2,24 +2,30 @@
   position: fixed;
   top: 16px;
   right: 16px;
-  width: 44px;
-  height: 44px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  background-color: rgba(0, 0, 0, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: rgba(74, 144, 226, 0.9);
+  border: none;
   color: white;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   z-index: 1100;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+}
+
+.hamburger-menu-button svg {
+  width: 28px;
+  height: 28px;
 }
 
 .hamburger-menu-button:hover {
-  background-color: rgba(74, 144, 226, 0.9);
-  border-color: rgba(74, 144, 226, 0.9);
+  background-color: rgba(74, 144, 226, 1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+  transform: scale(1.05);
 }
 
 .hamburger-menu-button:active {

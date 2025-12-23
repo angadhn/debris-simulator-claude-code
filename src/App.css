@@ -95,3 +95,10 @@
   background-color: #222;
   color: #aaa;
 }
+
+/* Hide Cesium Ion credits/logo to declutter the view */
+.cesium-widget-credits,
+.cesium-credit-logoContainer,
+.cesium-credit-textContainer {
+  display: none !important;
+}
