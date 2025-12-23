@@ -382,8 +382,7 @@
 @media (max-width: 768px) {
   .desktop-title,
   .desktop-view-switcher,
-  .desktop-only,
-  .desktop-help {
+  .desktop-only {
     display: none !important;
   }
 
@@ -425,19 +424,43 @@
   .cesium-sceneModePicker-wrapper {
     margin: 0 !important;
   }
+
+  /* Position help button above Cesium controls on mobile */
+  .help-button {
+    position: fixed !important;
+    right: 16px !important;
+    bottom: auto !important;
+    /* Calculate position: sum of Cesium buttons + gaps */
+    /* Typical Cesium toolbar has ~3-4 buttons at 40px each + gaps */
+    top: auto !important;
+    transform: translateY(-100%) translateY(-180px) !important;
+  }
+
+  /* Adjust help button position when it overlaps with Cesium */
+  @supports (bottom: calc(100% + 8px)) {
+    .help-button {
+      bottom: calc(16px + 160px) !important; /* Above Cesium stack */
+      top: auto !important;
+      transform: none !important;
+    }
+  }
 }
 
 /* Hide mobile components on desktop (> 768px) */
 @media (min-width: 769px) {
   .mobile-only,
   .mobile-title,
-  .mobile-header-actions,
   .collapsible-search-button,
   .hamburger-menu-button,
   .hamburger-menu-overlay,
   .filter-button,
   .filter-panel-overlay {
     display: none !important;
+  }
+
+  /* Position help button on desktop - just above Cesium home button */
+  .help-button {
+    bottom: calc(16px + 44px + 8px) !important; /* Home button height + gap */
   }
 
   /* Show desktop title */
