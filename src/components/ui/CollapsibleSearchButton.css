@@ -19,16 +19,16 @@
 .search-icon-button {
   width: 56px;
   height: 56px;
-  border-radius: 50%;
-  background-color: rgba(74, 144, 226, 0.9);
-  border: none;
+  border-radius: 4px;
+  background-color: rgba(38, 38, 38, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: white;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  transition: all 0.3s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  transition: all 0.2s ease;
 }
 
 .search-icon-button svg {
@@ -37,13 +37,12 @@
 }
 
 .search-icon-button:hover {
-  background-color: rgba(74, 144, 226, 1);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
-  transform: scale(1.05);
+  background-color: rgba(48, 48, 48, 0.9);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .search-icon-button:active {
-  transform: scale(0.95);
+  background-color: rgba(58, 58, 58, 1);
 }
 
 .search-input-expanded {
@@ -172,11 +171,11 @@
   }
 
   .search-icon-button:hover {
-    background-color: rgba(0, 0, 0, 0.85);
+    background-color: rgba(38, 38, 38, 0.75);
   }
 
   .search-icon-button:active {
-    background-color: rgba(74, 144, 226, 0.9);
+    background-color: rgba(58, 58, 58, 1);
     transform: scale(0.95);
     transition: all 0.1s;
   }

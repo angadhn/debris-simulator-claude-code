@@ -425,24 +425,12 @@
     margin: 0 !important;
   }
 
-  /* Position help button above Cesium controls on mobile */
+  /* Position help button just above home button on mobile */
   .help-button {
     position: fixed !important;
     right: 16px !important;
-    bottom: auto !important;
-    /* Calculate position: sum of Cesium buttons + gaps */
-    /* Typical Cesium toolbar has ~3-4 buttons at 40px each + gaps */
+    bottom: calc(16px + 40px + 8px) !important; /* 16px base + home button (40px) + 8px gap */
     top: auto !important;
-    transform: translateY(-100%) translateY(-180px) !important;
-  }
-
-  /* Adjust help button position when it overlaps with Cesium */
-  @supports (bottom: calc(100% + 8px)) {
-    .help-button {
-      bottom: calc(16px + 160px) !important; /* Above Cesium stack */
-      top: auto !important;
-      transform: none !important;
-    }
   }
 }
 
