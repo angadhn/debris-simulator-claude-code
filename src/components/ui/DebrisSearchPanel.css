@@ -1,6 +1,6 @@
 .debris-search-panel {
   position: absolute;
-  top: 20px;
+  top: 90px; /* Position below header (header ~80px + margin) */
   left: 20px;
   background: rgba(0, 0, 0, 0.85);
   color: white;
@@ -11,6 +11,8 @@
   z-index: 1000;
   min-width: 320px;
   max-width: 400px;
+  max-height: calc(100vh - 110px); /* Prevent extending below viewport */
+  overflow-y: auto;
 }
 
 .search-header {
