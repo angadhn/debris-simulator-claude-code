@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { DebrisAPI } from '../../services/debris-api';
 import { useDebrisStore } from '../../stores/debris-store';
 import { convertTLEArrayToDebrisObjects } from '../../utils/tle-converter';
@@ -17,12 +17,29 @@ export function DebrisSearchPanel({
   displayedObjects,
   className = '',
 }: DebrisSearchPanelProps) {
+  const debris = useDebrisStore((state) => state.debris);
   const addDebrisObjects = useDebrisStore((state) => state.addDebrisObjects);
+  const countryFilters = useDebrisStore((state) => state.countryFilters);
+  const setCountryFilters = useDebrisStore((state) => state.setCountryFilters);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [realTotalCount, setRealTotalCount] = useState<number | null>(null);
   const [isLoadingCount, setIsLoadingCount] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
+  const [showCountryFilters, setShowCountryFilters] = useState(false);
+
+  // Extract unique countries from debris data
+  const availableCountries = useMemo(() => {
+    const countries = new Map<string, number>();
+    debris.forEach((d) => {
+      const country = d.countryCode || 'UNKNOWN';
+      countries.set(country, (countries.get(country) || 0) + 1);
+    });
+    // Sort by count descending
+    return Array.from(countries.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([code, count]) => ({ code, count }));
+  }, [debris]);
 
   // Fetch real count from Space-Track on mount
   useEffect(() => {
@@ -79,6 +96,20 @@ export function DebrisSearchPanel({
     }
   };
 
+  const handleCountryToggle = (countryCode: string) => {
+    if (countryFilters.includes(countryCode)) {
+      // Remove from filter
+      setCountryFilters(countryFilters.filter((c) => c !== countryCode));
+    } else {
+      // Add to filter
+      setCountryFilters([...countryFilters, countryCode]);
+    }
+  };
+
+  const handleClearCountryFilters = () => {
+    setCountryFilters([]);
+  };
+
   return (
     <div className={`debris-search-panel ${className}`}>
       <div className="search-header">
@@ -108,6 +139,46 @@ export function DebrisSearchPanel({
         </button>
       </div>
 
+      {/* Country Filter */}
+      <div className="country-filter-section">
+        <div
+          className="country-filter-header"
+          onClick={() => setShowCountryFilters(!showCountryFilters)}
+        >
+          <span className="filter-title">
+            Country/Organization Filter
+            {countryFilters.length > 0 && (
+              <span className="filter-active-count"> ({countryFilters.length} selected)</span>
+            )}
+          </span>
+          <span className="expand-icon">{showCountryFilters ? '▲' : '▼'}</span>
+        </div>
+
+        {showCountryFilters && (
+          <div className="country-filter-content">
+            {countryFilters.length > 0 && (
+              <button className="clear-filters-btn" onClick={handleClearCountryFilters}>
+                Clear All
+              </button>
+            )}
+            <div className="country-list">
+              {availableCountries.map(({ code, count }) => (
+                <label key={code} className="country-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={countryFilters.includes(code)}
+                    onChange={() => handleCountryToggle(code)}
+                  />
+                  <span className="country-name">
+                    {code} <span className="country-count">({count.toLocaleString()})</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="total-count">
         <strong>ⓘ</strong> Space-Track.org tracks{' '}
         {isLoadingCount ? (
@@ -115,11 +186,9 @@ export function DebrisSearchPanel({
         ) : realTotalCount !== null ? (
           <strong>{realTotalCount.toLocaleString()}</strong>
         ) : (
-          <strong>~25,000+</strong>
+          <strong>~30,000</strong>
         )}{' '}
         total active objects.
-        <br />
-        Currently loading first <strong>1,000</strong> for performance.
       </div>
     </div>
   );

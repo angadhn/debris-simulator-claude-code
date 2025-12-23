@@ -13,6 +13,7 @@ export interface DebrisObject {
   apogee?: number;                          // km
   perigee?: number;                         // km
   rcsSize?: string;                         // Radar Cross Section: SMALL, MEDIUM, LARGE
+  countryCode?: string;                     // Country/Organization code (US, CIS, PRC, etc.)
 }
 
 export interface OrbitData {

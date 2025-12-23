@@ -44,6 +44,7 @@ interface DebrisStore {
   selectedDebrisId: number | null;
   filters: DebrisFilters;
   orbitFilters: OrbitFilters;
+  countryFilters: string[]; // Array of selected country codes (empty = all)
   searchQuery: string;
   totalObjectsAvailable: number;
   isAnimating: boolean;
@@ -57,6 +58,7 @@ interface DebrisStore {
   setSelectedDebrisId: (id: number | null) => void;
   setFilters: (filters: DebrisFilters) => void;
   setOrbitFilters: (filters: OrbitFilters) => void;
+  setCountryFilters: (filters: string[]) => void;
   setSearchQuery: (query: string) => void;
   setTotalObjectsAvailable: (total: number) => void;
   setIsAnimating: (isAnimating: boolean) => void;
@@ -102,6 +104,7 @@ export const useDebrisStore = create<DebrisStore>((set) => ({
     meo: true,
     geo: true,
   },
+  countryFilters: [], // Empty array = show all countries
   searchQuery: '',
   totalObjectsAvailable: 0,
   isAnimating: false,
@@ -122,6 +125,7 @@ export const useDebrisStore = create<DebrisStore>((set) => ({
   setSelectedDebrisId: (id) => set({ selectedDebrisId: id }),
   setFilters: (filters) => set({ filters }),
   setOrbitFilters: (orbitFilters) => set({ orbitFilters }),
+  setCountryFilters: (countryFilters) => set({ countryFilters }),
   setSearchQuery: (searchQuery) => set({ searchQuery }),
   setTotalObjectsAvailable: (totalObjectsAvailable) => set({ totalObjectsAvailable }),
   setIsAnimating: (isAnimating) => set({ isAnimating }),

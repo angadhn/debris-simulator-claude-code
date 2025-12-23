@@ -27,14 +27,15 @@ export function OrbitalViewer({ className = '' }: OrbitalViewerProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch debris data (limit to 1000 for initial testing)
-  const { loading: debrisLoading, error: debrisError } = useDebrisData('active', 1000, true);
+  // Fetch debris data (load all active objects)
+  const { loading: debrisLoading, error: debrisError } = useDebrisData('active', 30000, true);
 
   // Get debris state for legend
   const debris = useDebrisStore((state) => state.debris);
   const filters = useDebrisStore((state) => state.filters);
   const orbitFilters = useDebrisStore((state) => state.orbitFilters);
   const setOrbitFilters = useDebrisStore((state) => state.setOrbitFilters);
+  const countryFilters = useDebrisStore((state) => state.countryFilters);
   const searchQuery = useDebrisStore((state) => state.searchQuery);
   const setSearchQuery = useDebrisStore((state) => state.setSearchQuery);
   const totalObjectsAvailable = useDebrisStore((state) => state.totalObjectsAvailable);
@@ -86,6 +87,12 @@ export function OrbitalViewer({ className = '' }: OrbitalViewerProps) {
         if (!matchesName && !matchesNorad) return false;
       }
 
+      // Country filter (empty array = show all)
+      if (countryFilters.length > 0) {
+        const countryCode = d.countryCode || 'UNKNOWN';
+        if (!countryFilters.includes(countryCode)) return false;
+      }
+
       return true;
     });
 
@@ -113,7 +120,7 @@ export function OrbitalViewer({ className = '' }: OrbitalViewerProps) {
     });
 
     return counts;
-  }, [debris, filters, orbitFilters, searchQuery]);
+  }, [debris, filters, orbitFilters, countryFilters, searchQuery]);
 
   useEffect(() => {
     console.log('OrbitalViewer useEffect running, containerRef:', containerRef.current);

@@ -18,6 +18,7 @@ export function convertTLEToDebrisObject(tle: TLEData): DebrisObject {
     perigee: parseFloat(tle.PERIAPSIS),
     orbitPeriod: parseFloat(tle.PERIOD) * 60, // Convert minutes to seconds
     rcsSize: tle.RCS_SIZE || undefined,
+    countryCode: tle.COUNTRY_CODE || undefined,
   };
 }
 

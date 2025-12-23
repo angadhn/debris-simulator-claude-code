@@ -13,6 +13,7 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
   const debris = useDebrisStore((state) => state.debris);
   const filters = useDebrisStore((state) => state.filters);
   const orbitFilters = useDebrisStore((state) => state.orbitFilters);
+  const countryFilters = useDebrisStore((state) => state.countryFilters);
   const searchQuery = useDebrisStore((state) => state.searchQuery);
   const selectedDebrisId = useDebrisStore((state) => state.selectedDebrisId);
   const isAnimating = useDebrisStore((state) => state.isAnimating);
@@ -73,9 +74,15 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
         if (!matchesName && !matchesNorad) return false;
       }
 
+      // Country filter (empty array = show all)
+      if (countryFilters.length > 0) {
+        const countryCode = d.countryCode || 'UNKNOWN';
+        if (!countryFilters.includes(countryCode)) return false;
+      }
+
       return true;
     });
-  }, [debris, filters, orbitFilters, searchQuery]);
+  }, [debris, filters, orbitFilters, countryFilters, searchQuery]);
 
   // Render debris points - ONLY when viewer or filteredDebris changes
   useEffect(() => {
