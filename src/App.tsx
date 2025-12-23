@@ -7,6 +7,7 @@ import { HamburgerMenu } from './components/ui/HamburgerMenu';
 import { CollapsibleSearchButton } from './components/ui/CollapsibleSearchButton';
 import { FilterButton } from './components/ui/FilterButton';
 import { FilterPanel } from './components/ui/FilterPanel';
+import { WelcomeTutorial, useWelcomeTutorial } from './components/ui/WelcomeTutorial';
 import { useObjectCounts } from './hooks/useObjectCounts';
 import './App.css'
 import './mobile.css'
@@ -20,17 +21,28 @@ function App() {
   // Get object counts for FilterPanel
   const objectCounts = useObjectCounts();
 
+  // Welcome tutorial
+  const { showTutorial, openTutorial, closeTutorial } = useWelcomeTutorial();
+
   return (
     <div className="app">
       <header className="app-header">
         {/* Mobile components */}
         <CollapsibleSearchButton onSearch={setSearchQuery} />
         <h1 className="mobile-title">Space Debris</h1>
-        <HamburgerMenu />
+        <div className="mobile-header-actions">
+          <button className="help-button" onClick={openTutorial} aria-label="Help" title="Show tutorial">
+            ?
+          </button>
+          <HamburgerMenu />
+        </div>
 
         {/* Desktop components */}
         <h1 className="desktop-title">Space Debris Visualization & Capture Simulator</h1>
         <ViewSwitcher className="desktop-view-switcher" />
+        <button className="help-button desktop-help" onClick={openTutorial} aria-label="Help" title="Show tutorial">
+          ?
+        </button>
       </header>
 
       <main className="app-main">
@@ -50,6 +62,12 @@ function App() {
         orbitFilters={orbitFilters}
         onOrbitFilterChange={setOrbitFilters}
       />
+
+      {/* Welcome tutorial - auto-shows on first visit */}
+      <WelcomeTutorial />
+
+      {/* Manually triggered tutorial */}
+      {showTutorial && <WelcomeTutorial forceShow={true} onClose={closeTutorial} />}
     </div>
   )
 }

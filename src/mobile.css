@@ -382,7 +382,8 @@
 @media (max-width: 768px) {
   .desktop-title,
   .desktop-view-switcher,
-  .desktop-only {
+  .desktop-only,
+  .desktop-help {
     display: none !important;
   }
 
@@ -430,6 +431,7 @@
 @media (min-width: 769px) {
   .mobile-only,
   .mobile-title,
+  .mobile-header-actions,
   .collapsible-search-button,
   .hamburger-menu-button,
   .hamburger-menu-overlay,
