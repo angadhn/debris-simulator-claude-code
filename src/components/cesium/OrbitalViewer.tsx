@@ -32,15 +32,67 @@ export function OrbitalViewer({ className = '' }: OrbitalViewerProps) {
 
   // Get debris state for legend
   const debris = useDebrisStore((state) => state.debris);
+  const filters = useDebrisStore((state) => state.filters);
   const orbitFilters = useDebrisStore((state) => state.orbitFilters);
   const setOrbitFilters = useDebrisStore((state) => state.setOrbitFilters);
+  const searchQuery = useDebrisStore((state) => state.searchQuery);
   const setSearchQuery = useDebrisStore((state) => state.setSearchQuery);
   const totalObjectsAvailable = useDebrisStore((state) => state.totalObjectsAvailable);
 
-  // Calculate object counts by type
+  // Calculate filtered debris count (applying ALL filters)
   const objectCounts = useMemo(() => {
+    // Apply all filters to debris
+    const filtered = debris.filter((d) => {
+      // Determine object type
+      const type = d.objectType.toUpperCase();
+      let filterType: 'payload' | 'rocketBody' | 'debris' | 'unknown';
+
+      if (type.includes('PAYLOAD')) {
+        filterType = 'payload';
+      } else if (type.includes('ROCKET') || type.includes('R/B')) {
+        filterType = 'rocketBody';
+      } else if (type.includes('DEBRIS')) {
+        filterType = 'debris';
+      } else {
+        filterType = 'unknown';
+      }
+
+      // Check if this type is enabled
+      if (!filters[filterType].enabled) return false;
+
+      // Check size filter for this type
+      const rcsSize = d.rcsSize?.toUpperCase();
+      const typeFilters = filters[filterType].sizes;
+
+      if (rcsSize) {
+        if (rcsSize === 'SMALL' && !typeFilters.small) return false;
+        if (rcsSize === 'MEDIUM' && !typeFilters.medium) return false;
+        if (rcsSize === 'LARGE' && !typeFilters.large) return false;
+      } else {
+        if (!typeFilters.unknown) return false;
+      }
+
+      // Orbit range filter
+      const apogee = d.apogee || 0;
+      if (apogee < 2000 && !orbitFilters.leo) return false;
+      if (apogee >= 2000 && apogee < 35000 && !orbitFilters.meo) return false;
+      if (apogee >= 35000 && !orbitFilters.geo) return false;
+
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesName = d.name.toLowerCase().includes(query);
+        const matchesNorad = d.noradId.toString().includes(query);
+        if (!matchesName && !matchesNorad) return false;
+      }
+
+      return true;
+    });
+
+    // Count by type (from total debris, not filtered)
     const counts = {
       total: debris.length,
+      filtered: filtered.length,
       payload: 0,
       rocketBody: 0,
       debris: 0,
@@ -61,7 +113,7 @@ export function OrbitalViewer({ className = '' }: OrbitalViewerProps) {
     });
 
     return counts;
-  }, [debris]);
+  }, [debris, filters, orbitFilters, searchQuery]);
 
   useEffect(() => {
     console.log('OrbitalViewer useEffect running, containerRef:', containerRef.current);

@@ -102,3 +102,15 @@
 .cesium-credit-textContainer {
   display: none !important;
 }
+
+/* Ensure Cesium controls are visible above legend panel */
+.cesium-viewer-toolbar,
+.cesium-viewer-homeButton,
+.cesium-viewer-sceneModePicker-wrapper,
+.cesium-viewer-geocoderContainer,
+.cesium-viewer-navigationHelpButton-wrapper,
+.cesium-viewer-animationContainer,
+.cesium-viewer-timelineContainer,
+.cesium-viewer-fullscreenButton {
+  z-index: 200 !important;
+}

@@ -11,6 +11,7 @@ interface OrbitFilters {
 interface DebrisLegendProps {
   objectCounts: {
     total: number;
+    filtered: number;
     payload: number;
     rocketBody: number;
     debris: number;
@@ -69,12 +70,6 @@ export function DebrisLegend({ objectCounts, orbitFilters, onOrbitFilterChange, 
     });
   };
 
-  const visibleCount =
-    (filters.payload.enabled ? objectCounts.payload : 0) +
-    (filters.rocketBody.enabled ? objectCounts.rocketBody : 0) +
-    (filters.debris.enabled ? objectCounts.debris : 0) +
-    (filters.unknown.enabled ? objectCounts.unknown : 0);
-
   return (
     <div className={`debris-legend ${collapsed ? 'collapsed' : ''} ${className}`}>
       <div className="legend-header" onClick={() => setCollapsed(!collapsed)}>
@@ -116,7 +111,7 @@ export function DebrisLegend({ objectCounts, orbitFilters, onOrbitFilterChange, 
           </div>
 
           <div className="object-count">
-            <strong>{visibleCount.toLocaleString()}</strong> of{' '}
+            <strong>{objectCounts.filtered.toLocaleString()}</strong> of{' '}
             <strong>{objectCounts.total.toLocaleString()}</strong> objects visible
           </div>
 

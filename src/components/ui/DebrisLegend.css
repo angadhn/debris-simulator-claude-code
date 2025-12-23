@@ -2,14 +2,17 @@
   position: absolute;
   top: 20px;
   right: 20px;
+  bottom: 140px; /* Leave space for time controls */
   background: rgba(0, 0, 0, 0.85);
   color: white;
   padding: 15px;
   border-radius: 8px;
   min-width: 250px;
+  max-height: calc(100vh - 180px); /* Prevent overlap with time controls */
+  overflow-y: auto;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  z-index: 1000;
+  z-index: 100; /* Lower than time controls, higher than Cesium default */
   user-select: none;
 }
 
