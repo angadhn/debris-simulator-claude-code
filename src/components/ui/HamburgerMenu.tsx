@@ -3,7 +3,11 @@ import { useUIStore } from '../../stores/ui-store';
 import { ViewSwitcher } from './ViewSwitcher';
 import './HamburgerMenu.css';
 
-export function HamburgerMenu() {
+interface HamburgerMenuProps {
+  onHelpClick?: () => void;
+}
+
+export function HamburgerMenu({ onHelpClick }: HamburgerMenuProps = {}) {
   const hamburgerMenuOpen = useUIStore((state) => state.hamburgerMenuOpen);
   const setHamburgerMenuOpen = useUIStore((state) => state.setHamburgerMenuOpen);
   const setFilterPanelOpen = useUIStore((state) => state.setFilterPanelOpen);
@@ -95,7 +99,7 @@ export function HamburgerMenu() {
             <div className="hamburger-menu-content">
               <div className="menu-section">
                 <div className="menu-section-title">View Mode</div>
-                <ViewSwitcher />
+                <ViewSwitcher onHelpClick={onHelpClick} />
               </div>
             </div>
           </div>

@@ -425,15 +425,6 @@
     margin: 0 !important;
   }
 
-  /* Position help button directly above home button in vertical stack on mobile */
-  .help-button {
-    position: fixed !important;
-    right: 16px !important;
-    /* Cesium home button is at bottom: 16px, height: ~33px */
-    /* Position help button directly above it with 8px gap */
-    bottom: calc(16px + 33px + 8px) !important; /* ~57px from bottom */
-    top: auto !important;
-  }
 }
 
 /* Hide mobile components on desktop (> 768px) */
@@ -446,15 +437,6 @@
   .filter-button,
   .filter-panel-overlay {
     display: none !important;
-  }
-
-  /* Position help button beside (left of) home button on desktop */
-  .help-button {
-    bottom: 16px !important;
-    top: auto !important;
-    /* Position to left of Cesium home button with 8px gap */
-    /* Home button is at right: 16px, width: ~33px */
-    right: calc(16px + 33px + 8px) !important; /* ~57px from right */
   }
 
   /* Show desktop title */

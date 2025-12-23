@@ -3,9 +3,10 @@ import type { ViewMode } from '../../types/simulation';
 
 interface ViewSwitcherProps {
   className?: string;
+  onHelpClick?: () => void;
 }
 
-export function ViewSwitcher({ className = '' }: ViewSwitcherProps = {}) {
+export function ViewSwitcher({ className = '', onHelpClick }: ViewSwitcherProps = {}) {
   const { viewMode, setViewMode } = useUIStore();
 
   const handleModeChange = (mode: ViewMode) => {
@@ -26,6 +27,13 @@ export function ViewSwitcher({ className = '' }: ViewSwitcherProps = {}) {
           onClick={() => handleModeChange('simulation')}
         >
           Simulation View
+        </button>
+        <button
+          className="view-button help-button-header"
+          onClick={onHelpClick}
+          title="Show tutorial"
+        >
+          Help
         </button>
       </div>
     </div>

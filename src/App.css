@@ -115,34 +115,7 @@
   z-index: 200 !important;
 }
 
-/* Help button - styled like Cesium controls */
-.help-button {
-  position: fixed;
-  bottom: 16px;
-  right: 16px;
-  width: 40px;
-  height: 40px;
-  border-radius: 4px;
-  background: rgba(38, 38, 38, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  font-size: 20px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  z-index: 300;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
-}
-
-.help-button:hover {
-  background: rgba(48, 48, 48, 0.9);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.help-button:active {
-  background: rgba(58, 58, 58, 1);
+/* Help button in header - styled like view buttons */
+.help-button-header {
+  /* Inherits view-button styles, no additional styling needed */
 }

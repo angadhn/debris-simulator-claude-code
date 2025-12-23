@@ -76,8 +76,8 @@ export function WelcomeTutorial({ forceShow = false, onClose }: WelcomeTutorialP
             <div className="step-content">
               <h3>Explore & Filter</h3>
               <p>
-                Use the <strong>filter button</strong> to show/hide object types, filter by country,
-                and switch between SGP4 and Kepler propagation modes
+                Use the <strong>filter button</strong> (on mobile) or sidebar (on desktop) to show/hide
+                object types, filter by country, and switch propagation modes
               </p>
             </div>
           </div>
@@ -88,8 +88,8 @@ export function WelcomeTutorial({ forceShow = false, onClose }: WelcomeTutorialP
             Get Started
           </button>
           <p className="welcome-tip">
-            💡 Tip: Click the <strong>ⓘ</strong> button next to "Propagation Mode" to learn about
-            the different orbital mechanics simulations
+            💡 Tip: Access <strong>Help</strong> anytime from the menu (hamburger icon ≡ on mobile,
+            or top header on desktop)
           </p>
         </div>
       </div>

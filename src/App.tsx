@@ -30,11 +30,11 @@ function App() {
         {/* Mobile components */}
         <CollapsibleSearchButton onSearch={setSearchQuery} />
         <h1 className="mobile-title">Space Debris</h1>
-        <HamburgerMenu />
+        <HamburgerMenu onHelpClick={openTutorial} />
 
         {/* Desktop components */}
         <h1 className="desktop-title">Space Debris Visualization & Capture Simulator</h1>
-        <ViewSwitcher className="desktop-view-switcher" />
+        <ViewSwitcher className="desktop-view-switcher" onHelpClick={openTutorial} />
       </header>
 
       <main className="app-main">
@@ -46,11 +46,6 @@ function App() {
 
         {/* Mobile filter button */}
         <FilterButton />
-
-        {/* Help button - positioned near Cesium controls */}
-        <button className="help-button" onClick={openTutorial} aria-label="Help" title="Show tutorial">
-          ?
-        </button>
       </main>
 
       {/* Mobile filter panel */}
