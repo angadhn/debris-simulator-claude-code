@@ -141,6 +141,24 @@ export function DebrisInfoPanel() {
                   <span className="value">{(selectedDebris.orbitPeriod / 60).toFixed(1)} min</span>
                 </div>
               )}
+              {selectedDebris.eccentricity !== undefined && (
+                <div className="info-row">
+                  <span className="label">Eccentricity:</span>
+                  <span className="value">{selectedDebris.eccentricity.toFixed(4)}</span>
+                </div>
+              )}
+              {selectedDebris.meanMotion !== undefined && (
+                <div className="info-row">
+                  <span className="label">Mean Motion:</span>
+                  <span className="value">{selectedDebris.meanMotion.toFixed(3)} rev/day</span>
+                </div>
+              )}
+              {selectedDebris.semiMajorAxis !== undefined && (
+                <div className="info-row">
+                  <span className="label">Semi-Major Axis:</span>
+                  <span className="value">{selectedDebris.semiMajorAxis.toFixed(0)} km</span>
+                </div>
+              )}
             </div>
           )}
 

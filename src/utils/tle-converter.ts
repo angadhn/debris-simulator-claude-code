@@ -13,10 +13,13 @@ export function convertTLEToDebrisObject(tle: TLEData): DebrisObject {
       line1: tle.TLE_LINE1,
       line2: tle.TLE_LINE2,
     },
-    inclination: parseFloat(tle.INCLINATION),
-    apogee: parseFloat(tle.APOAPSIS),
-    perigee: parseFloat(tle.PERIAPSIS),
-    orbitPeriod: parseFloat(tle.PERIOD) * 60, // Convert minutes to seconds
+    inclination: parseFloat(tle.INCLINATION) || undefined,
+    apogee: parseFloat(tle.APOAPSIS) || undefined,
+    perigee: parseFloat(tle.PERIAPSIS) || undefined,
+    orbitPeriod: parseFloat(tle.PERIOD) ? parseFloat(tle.PERIOD) * 60 : undefined, // Convert minutes to seconds
+    eccentricity: parseFloat(tle.ECCENTRICITY) || undefined,
+    meanMotion: parseFloat(tle.MEAN_MOTION) || undefined,
+    semiMajorAxis: parseFloat(tle.SEMIMAJOR_AXIS) || undefined,
     rcsSize: tle.RCS_SIZE || undefined,
     countryCode: tle.COUNTRY_CODE || undefined,
   };

@@ -180,15 +180,30 @@ export function DebrisSearchPanel({
       </div>
 
       <div className="total-count">
-        <strong>ⓘ</strong> Space-Track.org tracks{' '}
-        {isLoadingCount ? (
-          <strong>loading...</strong>
-        ) : realTotalCount !== null ? (
-          <strong>{realTotalCount.toLocaleString()}</strong>
-        ) : (
-          <strong>~30,000</strong>
-        )}{' '}
-        total active objects.
+        <div className="count-row">
+          <span>
+            <strong>ⓘ</strong> Space-Track.org tracks{' '}
+            {isLoadingCount ? (
+              <strong>loading...</strong>
+            ) : realTotalCount !== null ? (
+              <strong>{realTotalCount.toLocaleString()}</strong>
+            ) : (
+              <strong>~30,000</strong>
+            )}{' '}
+            <span className="active-label">
+              "active"
+              <span className="tooltip-icon" title='
+"Active" objects are still in orbit (not decayed).
+Includes: operational satellites, defunct satellites, debris, rocket bodies.
+
+Total catalog: ~50,000+ objects (including ~20,000 decayed/historical objects no longer in orbit).
+              '>
+                {' '}?
+              </span>
+            </span>{' '}
+            objects.
+          </span>
+        </div>
       </div>
     </div>
   );

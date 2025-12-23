@@ -12,6 +12,9 @@ export interface DebrisObject {
   inclination?: number;                     // degrees
   apogee?: number;                          // km
   perigee?: number;                         // km
+  eccentricity?: number;                    // Orbit shape (0=circle, >0=ellipse)
+  meanMotion?: number;                      // Revolutions per day
+  semiMajorAxis?: number;                   // km - average orbital radius
   rcsSize?: string;                         // Radar Cross Section: SMALL, MEDIUM, LARGE
   countryCode?: string;                     // Country/Organization code (US, CIS, PRC, etc.)
 }
