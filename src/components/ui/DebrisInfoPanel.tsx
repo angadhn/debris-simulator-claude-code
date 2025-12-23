@@ -42,7 +42,7 @@ export function DebrisInfoPanel() {
   const debris = useDebrisStore((state) => state.debris);
   const selectedDebrisId = useDebrisStore((state) => state.selectedDebrisId);
   const setSelectedDebrisId = useDebrisStore((state) => state.setSelectedDebrisId);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   const selectedDebris = useMemo(() => {
     if (!selectedDebrisId) return null;
