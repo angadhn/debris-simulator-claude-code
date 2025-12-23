@@ -253,24 +253,35 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
 
     console.log(`Focusing camera on ${selectedPos.name} (NORAD ${selectedDebrisId})`);
 
-    // Fly camera to debris object
+    // Pan camera to debris object while maintaining home screen zoom level
+    // Position camera at fixed distance from Earth center (not debris)
+    const earthCenter = Cesium.Cartesian3.ZERO;
+    const debrisDirection = Cesium.Cartesian3.normalize(
+      selectedPos.position,
+      new Cesium.Cartesian3()
+    );
+
+    // Position camera at ~3.5x Earth radius from center (comfortable Earth view)
+    // This maintains the "home screen" zoom level
+    const earthRadius = 6371000; // meters
+    const cameraDistance = earthRadius * 3.5; // ~22,300 km from Earth center
+    const cameraPosition = Cesium.Cartesian3.multiplyByScalar(
+      debrisDirection,
+      cameraDistance,
+      new Cesium.Cartesian3()
+    );
+
     viewer.camera.flyTo({
-      destination: Cesium.Cartesian3.fromElements(
-        selectedPos.position.x,
-        selectedPos.position.y,
-        selectedPos.position.z
-      ),
+      destination: cameraPosition,
       orientation: {
-        heading: Cesium.Math.toRadians(0),
-        pitch: Cesium.Math.toRadians(-45),
-        roll: 0.0,
+        direction: Cesium.Cartesian3.negate(debrisDirection, new Cesium.Cartesian3()),
+        up: Cesium.Cartesian3.cross(
+          Cesium.Cartesian3.UNIT_Z,
+          debrisDirection,
+          new Cesium.Cartesian3()
+        ),
       },
-      duration: 2.0, // Animation duration in seconds
-      offset: new Cesium.HeadingPitchRange(
-        0,
-        Cesium.Math.toRadians(-45),
-        25000000 // 25,000 km distance from object - wider view
-      ),
+      duration: 2.0,
     });
   }, [viewer, selectedDebrisId]);
 
