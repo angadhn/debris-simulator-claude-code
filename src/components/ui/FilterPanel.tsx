@@ -31,6 +31,20 @@ export function FilterPanel({ objectCounts, orbitFilters, onOrbitFilterChange }:
   const debris = useDebrisStore((state) => state.debris);
   const searchQuery = useDebrisStore((state) => state.searchQuery);
   const countryFilters = useDebrisStore((state) => state.countryFilters);
+  const setCountryFilters = useDebrisStore((state) => state.setCountryFilters);
+
+  // Extract unique countries from debris data
+  const availableCountries = useMemo(() => {
+    const countries = new Map<string, number>();
+    debris.forEach((d) => {
+      const country = d.countryCode || 'UNKNOWN';
+      countries.set(country, (countries.get(country) || 0) + 1);
+    });
+    // Sort by count descending
+    return Array.from(countries.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([code, count]) => ({ code, count }));
+  }, [debris]);
 
   const handleClose = () => {
     setFilterPanelOpen(false);
@@ -45,6 +59,18 @@ export function FilterPanel({ objectCounts, orbitFilters, onOrbitFilterChange }:
   const handleOrbitFilterToggle = (orbit: keyof OrbitFilters) => {
     const newFilters = { ...orbitFilters, [orbit]: !orbitFilters[orbit] };
     onOrbitFilterChange(newFilters);
+  };
+
+  const handleCountryToggle = (countryCode: string) => {
+    if (countryFilters.includes(countryCode)) {
+      setCountryFilters(countryFilters.filter((c) => c !== countryCode));
+    } else {
+      setCountryFilters([...countryFilters, countryCode]);
+    }
+  };
+
+  const handleClearCountryFilters = () => {
+    setCountryFilters([]);
   };
 
   const handleTypeToggle = (type: 'payload' | 'rocketBody' | 'debris' | 'unknown') => {
@@ -209,6 +235,35 @@ export function FilterPanel({ objectCounts, orbitFilters, onOrbitFilterChange }:
                 />
                 <span>GEO (~36k km)</span>
               </label>
+            </div>
+          </div>
+
+          {/* Country/Organization Filter */}
+          <div className="filter-section">
+            <div className="filter-section-title">
+              Country/Organization
+              {countryFilters.length > 0 && (
+                <span className="filter-badge">{countryFilters.length}</span>
+              )}
+            </div>
+            {countryFilters.length > 0 && (
+              <button className="clear-all-btn" onClick={handleClearCountryFilters}>
+                Clear All
+              </button>
+            )}
+            <div className="country-filter-list">
+              {availableCountries.slice(0, 15).map(({ code, count }) => (
+                <label key={code} className="filter-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={countryFilters.includes(code)}
+                    onChange={() => handleCountryToggle(code)}
+                  />
+                  <span>
+                    {code} <span className="filter-count">({count.toLocaleString()})</span>
+                  </span>
+                </label>
+              ))}
             </div>
           </div>
 

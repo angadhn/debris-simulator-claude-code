@@ -85,6 +85,18 @@
   text-transform: uppercase;
   margin-bottom: 12px;
   letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-badge {
+  background-color: rgba(74, 144, 226, 0.4);
+  color: #4a90e2;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .filter-options {
@@ -125,6 +137,44 @@
   color: white;
   font-size: 14px;
   flex: 1;
+}
+
+.filter-count {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+.clear-all-btn {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 12px;
+  background: rgba(74, 144, 226, 0.2);
+  border: 1px solid rgba(74, 144, 226, 0.4);
+  border-radius: 8px;
+  color: #4a90e2;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 44px;
+}
+
+.clear-all-btn:hover {
+  background: rgba(74, 144, 226, 0.3);
+  border-color: rgba(74, 144, 226, 0.6);
+}
+
+.clear-all-btn:active {
+  transform: scale(0.98);
+}
+
+.country-filter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 .object-count {
