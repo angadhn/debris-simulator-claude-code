@@ -189,12 +189,14 @@ export function DebrisSearchPanel({
           <button
             className="mode-info"
             onClick={() => {
-              const msg = propagationMode === 'sgp4'
-                ? 'SGP4: Accurate orbital propagation with atmospheric drag and perturbations'
-                : 'Kepler: Fast 2-body propagation (100-200x faster, ~1% position error per day)';
-              alert(msg);
+              window.open(
+                'https://github.com/angadhn/debris-simulator-claude-code/blob/main/docs/orbit-propagation.md',
+                '_blank',
+                'noopener,noreferrer'
+              );
             }}
             aria-label="Propagation mode information"
+            title="Learn about SGP4 and Kepler propagation methods"
           >
             ⓘ
           </button>
