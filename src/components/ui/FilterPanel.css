@@ -270,6 +270,62 @@
   }
 }
 
+/* Propagation Mode */
+.propagation-mode-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.propagation-btn {
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.propagation-btn .btn-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+}
+
+.propagation-btn .btn-desc {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.propagation-btn:active {
+  transform: scale(0.98);
+}
+
+.propagation-btn.active {
+  background: rgba(74, 144, 226, 0.3);
+  border-color: rgba(74, 144, 226, 0.7);
+}
+
+.propagation-btn.active .btn-label {
+  color: #4a90e2;
+}
+
+.propagation-btn.active .btn-desc {
+  color: rgba(74, 144, 226, 0.8);
+}
+
+.propagation-info {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  line-height: 1.4;
+}
+
 /* Touch-friendly adjustments */
 @media (hover: none) and (pointer: coarse) {
   .filter-checkbox,

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useDebrisStore } from '../../stores/debris-store';
+import { useUIStore } from '../../stores/ui-store';
 import './DebrisInfoPanel.css';
 
 /**
@@ -42,6 +43,8 @@ export function DebrisInfoPanel() {
   const debris = useDebrisStore((state) => state.debris);
   const selectedDebrisId = useDebrisStore((state) => state.selectedDebrisId);
   const setSelectedDebrisId = useDebrisStore((state) => state.setSelectedDebrisId);
+  const cameraMode = useUIStore((state) => state.cameraMode);
+  const setCameraMode = useUIStore((state) => state.setCameraMode);
   const [isCollapsed, setIsCollapsed] = useState(true);
 
   const selectedDebris = useMemo(() => {
@@ -74,6 +77,10 @@ export function DebrisInfoPanel() {
     setIsCollapsed(!isCollapsed);
   };
 
+  const toggleCameraMode = () => {
+    setCameraMode(cameraMode === 'external' ? 'firstPerson' : 'external');
+  };
+
   return (
     <div className={`debris-info-panel ${isCollapsed ? 'collapsed' : ''}`} onClick={isCollapsed ? toggleCollapse : undefined}>
       <div className="info-header">
@@ -87,13 +94,30 @@ export function DebrisInfoPanel() {
         )}
         <div className="header-buttons">
           <button
-            className="collapse-btn"
-            onClick={toggleCollapse}
-            title={isCollapsed ? 'Expand' : 'Collapse'}
+            className="camera-btn"
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent collapsed panel from expanding
+              toggleCameraMode();
+            }}
+            title={cameraMode === 'external' ? 'First-Person View' : 'External View'}
           >
-            {isCollapsed ? '▲' : '▼'}
+            {cameraMode === 'external' ? '📹' : '🌍'}
           </button>
-          <button className="close-btn" onClick={handleClose}>×</button>
+          {!isCollapsed && (
+            <>
+              <button
+                className="collapse-btn"
+                onClick={toggleCollapse}
+                title={isCollapsed ? 'Expand' : 'Collapse'}
+              >
+                {isCollapsed ? '▲' : '▼'}
+              </button>
+              <button className="close-btn" onClick={handleClose}>×</button>
+            </>
+          )}
+          {isCollapsed && (
+            <button className="close-btn" onClick={handleClose}>×</button>
+          )}
         </div>
       </div>
 

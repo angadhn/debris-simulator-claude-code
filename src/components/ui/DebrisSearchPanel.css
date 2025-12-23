@@ -215,10 +215,13 @@
   font-style: normal;
   font-weight: bold;
   color: #4a90e2;
-  cursor: help;
+  cursor: pointer;
   transition: all 0.2s;
   position: relative;
   z-index: 1;
+  padding: 0;
+  margin: 0;
+  vertical-align: baseline;
 }
 
 .mode-info:hover {
@@ -226,6 +229,10 @@
   border-color: rgba(74, 144, 226, 0.7);
   transform: scale(1.1);
   z-index: 2;
+}
+
+.mode-info:active {
+  transform: scale(0.95);
 }
 
 .mode-toggle-container {
@@ -293,10 +300,13 @@
   font-style: normal;
   font-weight: bold;
   color: #4a90e2;
-  cursor: help;
+  cursor: pointer;
   transition: all 0.2s;
   position: relative;
   z-index: 1;
+  padding: 0;
+  margin: 0;
+  vertical-align: baseline;
 }
 
 .tooltip-icon:hover {
@@ -304,4 +314,8 @@
   border-color: rgba(74, 144, 226, 0.7);
   transform: scale(1.1);
   z-index: 2;
+}
+
+.tooltip-icon:active {
+  transform: scale(0.95);
 }

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useUIStore } from '../../stores/ui-store';
 import { useDebrisStore } from '../../stores/debris-store';
 import './FilterPanel.css';
@@ -24,8 +24,13 @@ interface FilterPanelProps {
 export function FilterPanel({ objectCounts, orbitFilters, onOrbitFilterChange }: FilterPanelProps) {
   const filterPanelOpen = useUIStore((state) => state.filterPanelOpen);
   const setFilterPanelOpen = useUIStore((state) => state.setFilterPanelOpen);
+  const propagationMode = useUIStore((state) => state.propagationMode);
+  const setPropagationMode = useUIStore((state) => state.setPropagationMode);
   const filters = useDebrisStore((state) => state.filters);
   const setFilters = useDebrisStore((state) => state.setFilters);
+  const debris = useDebrisStore((state) => state.debris);
+  const searchQuery = useDebrisStore((state) => state.searchQuery);
+  const countryFilters = useDebrisStore((state) => state.countryFilters);
 
   const handleClose = () => {
     setFilterPanelOpen(false);
@@ -80,11 +85,61 @@ export function FilterPanel({ objectCounts, orbitFilters, onOrbitFilterChange }:
     });
   };
 
-  const visibleCount =
-    (filters.payload.enabled ? objectCounts.payload : 0) +
-    (filters.rocketBody.enabled ? objectCounts.rocketBody : 0) +
-    (filters.debris.enabled ? objectCounts.debris : 0) +
-    (filters.unknown.enabled ? objectCounts.unknown : 0);
+  // Calculate actual visible count based on ALL filters (including search)
+  const visibleCount = useMemo(() => {
+    return debris.filter((d) => {
+      // Determine object type
+      const type = d.objectType.toUpperCase();
+      let filterType: 'payload' | 'rocketBody' | 'debris' | 'unknown';
+
+      if (type.includes('PAYLOAD')) {
+        filterType = 'payload';
+      } else if (type.includes('ROCKET') || type.includes('R/B')) {
+        filterType = 'rocketBody';
+      } else if (type.includes('DEBRIS')) {
+        filterType = 'debris';
+      } else {
+        filterType = 'unknown';
+      }
+
+      // Check if this type is enabled
+      if (!filters[filterType].enabled) return false;
+
+      // Check size filter for this type
+      const rcsSize = d.rcsSize?.toUpperCase();
+      const typeFilters = filters[filterType].sizes;
+
+      if (rcsSize) {
+        if (rcsSize === 'SMALL' && !typeFilters.small) return false;
+        if (rcsSize === 'MEDIUM' && !typeFilters.medium) return false;
+        if (rcsSize === 'LARGE' && !typeFilters.large) return false;
+      } else {
+        if (!typeFilters.unknown) return false;
+      }
+
+      // Orbit range filter
+      const apogee = d.apogee || 0;
+      if (apogee < 2000 && !orbitFilters.leo) return false;
+      if (apogee >= 2000 && apogee < 35000 && !orbitFilters.meo) return false;
+      if (apogee >= 35000 && !orbitFilters.geo) return false;
+
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesName = d.name.toLowerCase().includes(query);
+        const matchesNorad = d.noradId.toString().includes(query);
+        if (!matchesName && !matchesNorad) return false;
+      }
+
+      // Country filter
+      if (countryFilters.length > 0) {
+        const countryCode = d.countryCode || 'UNKNOWN';
+        if (!countryFilters.includes(countryCode)) return false;
+      }
+
+      return true;
+    }).length;
+  }, [debris, filters, orbitFilters, searchQuery, countryFilters]);
 
   // Close on ESC key
   useEffect(() => {
@@ -154,6 +209,32 @@ export function FilterPanel({ objectCounts, orbitFilters, onOrbitFilterChange }:
                 />
                 <span>GEO (~36k km)</span>
               </label>
+            </div>
+          </div>
+
+          {/* Propagation Mode */}
+          <div className="filter-section">
+            <div className="filter-section-title">Propagation Mode</div>
+            <div className="propagation-mode-buttons">
+              <button
+                className={`propagation-btn ${propagationMode === 'sgp4' ? 'active' : ''}`}
+                onClick={() => setPropagationMode('sgp4')}
+              >
+                <div className="btn-label">SGP4</div>
+                <div className="btn-desc">Accurate</div>
+              </button>
+              <button
+                className={`propagation-btn ${propagationMode === 'kepler' ? 'active' : ''}`}
+                onClick={() => setPropagationMode('kepler')}
+              >
+                <div className="btn-label">Kepler</div>
+                <div className="btn-desc">Fast</div>
+              </button>
+            </div>
+            <div className="propagation-info">
+              {propagationMode === 'sgp4'
+                ? 'Full orbital perturbations (slower, accurate)'
+                : '2-body mechanics (100-200x faster, ~1% error)'}
             </div>
           </div>
 

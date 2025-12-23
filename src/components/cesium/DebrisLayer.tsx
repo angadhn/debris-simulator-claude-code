@@ -22,6 +22,7 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
   const animationSpeed = useDebrisStore((state) => state.animationSpeed);
   const setSelectedDebrisId = useDebrisStore((state) => state.setSelectedDebrisId);
   const propagationMode = useUIStore((state) => state.propagationMode);
+  const cameraMode = useUIStore((state) => state.cameraMode);
 
   const pointCollectionRef = useRef<Cesium.PointPrimitiveCollection | null>(null);
   const orbitPathRef = useRef<Cesium.Entity | null>(null);
@@ -31,6 +32,7 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
   const trailEntityRef = useRef<Cesium.Entity | null>(null);
   const trailPositionsRef = useRef<Cesium.Cartesian3[]>([]);
   const preRenderListenerRef = useRef<(() => void) | null>(null);
+  const firstPersonInitializedRef = useRef<boolean>(false);
 
   // Filter debris based on all filters
   const filteredDebris = useMemo(() => {
@@ -371,6 +373,7 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
         trailEntityRef.current = null;
       }
       trailPositionsRef.current = [];
+      firstPersonInitializedRef.current = false; // Reset for next first-person view
 
       // Restore point collection opacity and visibility
       if (pointCollectionRef.current) {
@@ -483,6 +486,52 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
         trailPositionsRef.current.push(currentPosition.clone());
         // No limit - allow full orbital track to be visible
       }
+
+      // Update camera for first-person view
+      if (cameraMode === 'firstPerson' && currentPosition) {
+        if (!firstPersonInitializedRef.current) {
+          // First time: Set initial orientation
+          const cameraPosition = currentPosition.clone();
+
+          // Calculate forward direction (tangent to orbit)
+          const positionNormalized = Cesium.Cartesian3.normalize(cameraPosition, new Cesium.Cartesian3());
+          const east = Cesium.Cartesian3.cross(Cesium.Cartesian3.UNIT_Z, positionNormalized, new Cesium.Cartesian3());
+          Cesium.Cartesian3.normalize(east, east);
+          const forward = Cesium.Cartesian3.cross(positionNormalized, east, new Cesium.Cartesian3());
+          Cesium.Cartesian3.normalize(forward, forward);
+
+          // Calculate downward direction (toward Earth)
+          const earthCenter = Cesium.Cartesian3.ZERO;
+          const down = Cesium.Cartesian3.subtract(earthCenter, cameraPosition, new Cesium.Cartesian3());
+          Cesium.Cartesian3.normalize(down, down);
+
+          // Blend forward (60%) and down (40%) for nice horizon view
+          const direction = new Cesium.Cartesian3();
+          Cesium.Cartesian3.multiplyByScalar(forward, 0.6, direction);
+          const downScaled = new Cesium.Cartesian3();
+          Cesium.Cartesian3.multiplyByScalar(down, 0.4, downScaled);
+          Cesium.Cartesian3.add(direction, downScaled, direction);
+          Cesium.Cartesian3.normalize(direction, direction);
+
+          // Up vector: perpendicular to direction, roughly away from Earth
+          const up = Cesium.Cartesian3.cross(direction, east, new Cesium.Cartesian3());
+          Cesium.Cartesian3.normalize(up, up);
+
+          // Set initial camera position and orientation
+          viewer.camera.setView({
+            destination: cameraPosition,
+            orientation: {
+              direction: direction,
+              up: up,
+            },
+          });
+
+          firstPersonInitializedRef.current = true;
+        } else {
+          // After initialization: Only update position, preserve user's orientation
+          viewer.camera.position = currentPosition.clone();
+        }
+      }
     };
 
     viewer.scene.preRender.addEventListener(preRenderListener);
@@ -506,7 +555,60 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
       }
       trailPositionsRef.current = [];
     };
-  }, [viewer, isAnimating, selectedDebrisId, animationSpeed, propagationMode]);
+  }, [viewer, isAnimating, selectedDebrisId, animationSpeed, propagationMode, cameraMode]);
+
+  // Handle first-person camera mode (even when not animating)
+  useEffect(() => {
+    if (!viewer || !selectedDebrisId || cameraMode !== 'firstPerson') {
+      return;
+    }
+
+    // Find selected debris position
+    const selectedPos = debrisPositionsRef.current.find(
+      (p) => p.noradId === selectedDebrisId.toString()
+    );
+
+    if (!selectedPos) {
+      return;
+    }
+
+    // Position camera at satellite location
+    const cameraPosition = selectedPos.position.clone();
+
+    // Calculate forward direction (tangent to orbit)
+    const positionNormalized = Cesium.Cartesian3.normalize(cameraPosition, new Cesium.Cartesian3());
+    const east = Cesium.Cartesian3.cross(Cesium.Cartesian3.UNIT_Z, positionNormalized, new Cesium.Cartesian3());
+    Cesium.Cartesian3.normalize(east, east);
+    const forward = Cesium.Cartesian3.cross(positionNormalized, east, new Cesium.Cartesian3());
+    Cesium.Cartesian3.normalize(forward, forward);
+
+    // Calculate downward direction (toward Earth)
+    const earthCenter = Cesium.Cartesian3.ZERO;
+    const down = Cesium.Cartesian3.subtract(earthCenter, cameraPosition, new Cesium.Cartesian3());
+    Cesium.Cartesian3.normalize(down, down);
+
+    // Blend forward (60%) and down (40%) for nice horizon view
+    const direction = new Cesium.Cartesian3();
+    Cesium.Cartesian3.multiplyByScalar(forward, 0.6, direction);
+    const downScaled = new Cesium.Cartesian3();
+    Cesium.Cartesian3.multiplyByScalar(down, 0.4, downScaled);
+    Cesium.Cartesian3.add(direction, downScaled, direction);
+    Cesium.Cartesian3.normalize(direction, direction);
+
+    // Up vector: perpendicular to direction, roughly away from Earth
+    const up = Cesium.Cartesian3.cross(direction, east, new Cesium.Cartesian3());
+    Cesium.Cartesian3.normalize(up, up);
+
+    // Fly to first-person view
+    viewer.camera.flyTo({
+      destination: cameraPosition,
+      orientation: {
+        direction: direction,
+        up: up,
+      },
+      duration: 1.5,
+    });
+  }, [viewer, selectedDebrisId, cameraMode]);
 
   return null;
 }

@@ -186,13 +186,18 @@ export function DebrisSearchPanel({
       <div className="propagation-mode-section">
         <div className="mode-header">
           <span className="mode-title">Propagation Mode</span>
-          <span className="mode-info" title={
-            propagationMode === 'sgp4'
-              ? 'SGP4: Accurate orbital propagation with atmospheric drag and perturbations'
-              : 'Kepler: Fast 2-body propagation (100-200x faster, ~1% position error per day)'
-          }>
+          <button
+            className="mode-info"
+            onClick={() => {
+              const msg = propagationMode === 'sgp4'
+                ? 'SGP4: Accurate orbital propagation with atmospheric drag and perturbations'
+                : 'Kepler: Fast 2-body propagation (100-200x faster, ~1% position error per day)';
+              alert(msg);
+            }}
+            aria-label="Propagation mode information"
+          >
             ⓘ
-          </span>
+          </button>
         </div>
         <div className="mode-toggle-container">
           <button
@@ -225,14 +230,15 @@ export function DebrisSearchPanel({
             )}{' '}
             <span className="active-label">
               "active"
-              <span className="tooltip-icon" title='
-"Active" objects are still in orbit (not decayed).
-Includes: operational satellites, defunct satellites, debris, rocket bodies.
-
-Total catalog: ~50,000+ objects (including ~20,000 decayed/historical objects no longer in orbit).
-              '>
+              <button
+                className="tooltip-icon"
+                onClick={() => {
+                  alert('"Active" objects are still in orbit (not decayed).\n\nIncludes: operational satellites, defunct satellites, debris, rocket bodies.\n\nTotal catalog: ~50,000+ objects (including ~20,000 decayed/historical objects no longer in orbit).');
+                }}
+                aria-label="Active objects information"
+              >
                 {' '}?
-              </span>
+              </button>
             </span>{' '}
             objects.
           </span>

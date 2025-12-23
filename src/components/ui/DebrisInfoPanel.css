@@ -63,6 +63,23 @@
   align-items: center;
 }
 
+.camera-btn {
+  background: rgba(74, 144, 226, 0.2);
+  border: 1px solid rgba(74, 144, 226, 0.4);
+  color: #4a90e2;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.camera-btn:hover {
+  background: rgba(74, 144, 226, 0.3);
+  border-color: rgba(74, 144, 226, 0.6);
+}
+
 .collapse-btn {
   background: rgba(74, 144, 226, 0.2);
   border: 1px solid rgba(74, 144, 226, 0.4);
@@ -199,7 +216,7 @@
 }
 
 .debris-info-panel.collapsed .header-buttons {
-  display: none;
+  display: flex; /* Keep buttons visible in collapsed mode */
 }
 
 .debris-info-panel.collapsed:hover .info-icon {
