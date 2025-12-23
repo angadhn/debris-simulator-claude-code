@@ -72,6 +72,45 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
+.search-action-button {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  background: rgba(74, 144, 226, 0.3);
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+
+.search-action-button:hover:not(:disabled) {
+  background: rgba(74, 144, 226, 0.5);
+}
+
+.search-action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.search-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .search-close-button {
   width: 44px;
   height: 44px;

@@ -163,8 +163,8 @@
   /* Collapsed info panel shows as small banner on mobile */
   .debris-info-panel.collapsed {
     position: fixed !important;
-    top: auto !important;
-    bottom: 90px !important;
+    top: 80px !important;
+    bottom: auto !important;
     left: 50% !important;
     transform: translateX(-50%);
     right: auto !important;
@@ -386,26 +386,43 @@
     display: none !important;
   }
 
-  /* Show mobile title */
+  /* Hide mobile title */
   .mobile-title {
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    color: white;
-    margin: 0;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    white-space: nowrap;
+    display: none !important;
   }
 
-  /* Adjust header for mobile components */
+  /* Make header transparent on mobile but keep children visible */
   .app-header {
-    position: relative;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 70px;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    overflow: visible !important;
+    z-index: 1000 !important;
+  }
+
+  /* Reposition Cesium controls to bottom-right vertical stack */
+  .cesium-viewer-toolbar {
+    position: fixed !important;
+    top: auto !important;
+    right: 16px !important;
+    bottom: 16px !important;
+    left: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  /* Individual Cesium buttons */
+  .cesium-button,
+  .cesium-viewer-homeButton,
+  .cesium-sceneModePicker-wrapper {
+    margin: 0 !important;
   }
 }
 

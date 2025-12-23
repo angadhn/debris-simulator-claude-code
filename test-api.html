@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debris Simulator API Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    h1 {
+      color: #4a90e2;
+    }
+    .config {
+      background: #2a2a2a;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      background: #333;
+      border: 1px solid #555;
+      color: #fff;
+      border-radius: 4px;
+      margin: 10px 0;
+      font-size: 14px;
+    }
+    button {
+      background: #4a90e2;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      margin-right: 10px;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #357abd;
+    }
+    button:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+    .test-section {
+      background: #2a2a2a;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+    .test-section h3 {
+      margin-top: 0;
+      color: #4a90e2;
+    }
+    .result {
+      background: #1a1a1a;
+      padding: 15px;
+      border-radius: 4px;
+      margin-top: 10px;
+      border-left: 4px solid #555;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .result.success {
+      border-left-color: #4caf50;
+    }
+    .result.error {
+      border-left-color: #f44336;
+    }
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 10px;
+    }
+    .status.pending {
+      background: #ff9800;
+    }
+    .status.success {
+      background: #4caf50;
+    }
+    .status.error {
+      background: #f44336;
+    }
+  </style>
+</head>
+<body>
+  <h1>🛰️ Debris Simulator API Test</h1>
+
+  <div class="config">
+    <h3>Configuration</h3>
+    <label>
+      Base URL (your Vercel deployment URL):
+      <input
+        type="text"
+        id="baseUrl"
+        placeholder="https://your-project.vercel.app"
+        value="https://debris-simulator-claude-code.vercel.app"
+      >
+    </label>
+    <small style="color: #aaa;">Or use http://localhost:3000 for local testing</small>
+  </div>
+
+  <div class="test-section">
+    <h3>Test 1: Get Active Objects Count <span id="status1" class="status" style="display:none;"></span></h3>
+    <button onclick="testCount()">Run Test</button>
+    <div id="result1" class="result" style="display:none;"></div>
+  </div>
+
+  <div class="test-section">
+    <h3>Test 2: Fetch TLE Data (10 objects) <span id="status2" class="status" style="display:none;"></span></h3>
+    <button onclick="testTLE()">Run Test</button>
+    <div id="result2" class="result" style="display:none;"></div>
+  </div>
+
+  <div class="test-section">
+    <h3>Test 3: Search for ISS <span id="status3" class="status" style="display:none;"></span></h3>
+    <button onclick="testSearch()">Run Test</button>
+    <div id="result3" class="result" style="display:none;"></div>
+  </div>
+
+  <div class="test-section">
+    <h3>Test 4: Cache Test (re-run Test 2) <span id="status4" class="status" style="display:none;"></span></h3>
+    <button onclick="testCache()">Run Test</button>
+    <div id="result4" class="result" style="display:none;"></div>
+  </div>
+
+  <div style="text-align: center; margin-top: 30px;">
+    <button onclick="runAllTests()" style="background: #2e7d32; font-size: 16px;">
+      🚀 Run All Tests
+    </button>
+  </div>
+
+  <script>
+    function getBaseUrl() {
+      return document.getElementById('baseUrl').value.trim();
+    }
+
+    async function testAPI(testNum, endpoint, description) {
+      const statusEl = document.getElementById(`status${testNum}`);
+      const resultEl = document.getElementById(`result${testNum}`);
+
+      statusEl.textContent = 'Testing...';
+      statusEl.className = 'status pending';
+      statusEl.style.display = 'inline-block';
+      resultEl.style.display = 'block';
+      resultEl.className = 'result';
+      resultEl.textContent = 'Sending request...';
+
+      const baseUrl = getBaseUrl();
+      if (!baseUrl) {
+        statusEl.textContent = 'Error';
+        statusEl.className = 'status error';
+        resultEl.className = 'result error';
+        resultEl.textContent = 'Please enter a base URL';
+        return false;
+      }
+
+      const url = `${baseUrl}${endpoint}`;
+      const startTime = Date.now();
+
+      try {
+        const response = await fetch(url);
+        const duration = Date.now() - startTime;
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${JSON.stringify(data)}`);
+        }
+
+        statusEl.textContent = `✓ Success (${duration}ms)`;
+        statusEl.className = 'status success';
+        resultEl.className = 'result success';
+        resultEl.textContent = `✅ ${description}\n\n` +
+          `Status: ${response.status}\n` +
+          `Duration: ${duration}ms\n` +
+          `URL: ${url}\n\n` +
+          `Response:\n${JSON.stringify(data, null, 2)}`;
+        return true;
+      } catch (error) {
+        statusEl.textContent = '✗ Failed';
+        statusEl.className = 'status error';
+        resultEl.className = 'result error';
+        resultEl.textContent = `❌ ${description} failed\n\n` +
+          `Error: ${error.message}\n` +
+          `URL: ${url}\n\n` +
+          `Common issues:\n` +
+          `- Check that environment variables are set in Vercel\n` +
+          `- Verify Space-Track credentials\n` +
+          `- Ensure deployment completed successfully`;
+        return false;
+      }
+    }
+
+    async function testCount() {
+      await testAPI(1, '/api/count/active', 'Get object count');
+    }
+
+    async function testTLE() {
+      await testAPI(2, '/api/tle/active?limit=10', 'Fetch TLE data');
+    }
+
+    async function testSearch() {
+      await testAPI(3, '/api/search?name=ISS&limit=5', 'Search for ISS');
+    }
+
+    async function testCache() {
+      await testAPI(4, '/api/tle/active?limit=10', 'Cache test (should be faster)');
+    }
+
+    async function runAllTests() {
+      console.log('Running all tests...');
+      await testCount();
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await testTLE();
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await testSearch();
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await testCache();
+      console.log('All tests complete!');
+    }
+  </script>
+</body>
+</html>

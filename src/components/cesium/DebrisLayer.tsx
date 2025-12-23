@@ -237,6 +237,43 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
     };
   }, [viewer]);
 
+  // Camera focus on selected debris
+  useEffect(() => {
+    if (!viewer || !selectedDebrisId) return;
+
+    // Find selected debris position
+    const selectedPos = debrisPositionsRef.current.find(
+      (p) => parseInt(p.noradId) === selectedDebrisId
+    );
+
+    if (!selectedPos) {
+      console.warn(`Could not find debris position for camera focus: ${selectedDebrisId}`);
+      return;
+    }
+
+    console.log(`Focusing camera on ${selectedPos.name} (NORAD ${selectedDebrisId})`);
+
+    // Fly camera to debris object
+    viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromElements(
+        selectedPos.position.x,
+        selectedPos.position.y,
+        selectedPos.position.z
+      ),
+      orientation: {
+        heading: Cesium.Math.toRadians(0),
+        pitch: Cesium.Math.toRadians(-45),
+        roll: 0.0,
+      },
+      duration: 2.0, // Animation duration in seconds
+      offset: new Cesium.HeadingPitchRange(
+        0,
+        Cesium.Math.toRadians(-45),
+        15000000 // 15,000 km distance from object
+      ),
+    });
+  }, [viewer, selectedDebrisId]);
+
   // Animation system
   useEffect(() => {
     if (!viewer || !isAnimating || !selectedDebrisId) {
