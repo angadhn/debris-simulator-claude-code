@@ -87,7 +87,33 @@
   letter-spacing: 0.5px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
+}
+
+.filter-section-title.clickable {
+  cursor: pointer;
+  padding: 12px;
+  margin: 0 -12px 12px -12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.filter-section-title.clickable:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.filter-section-title.clickable span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.expand-arrow {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  transition: transform 0.2s;
 }
 
 .filter-badge {

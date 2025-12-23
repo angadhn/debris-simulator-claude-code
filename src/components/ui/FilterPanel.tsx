@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useUIStore } from '../../stores/ui-store';
 import { useDebrisStore } from '../../stores/debris-store';
 import './FilterPanel.css';
@@ -32,6 +32,8 @@ export function FilterPanel({ objectCounts, orbitFilters, onOrbitFilterChange }:
   const searchQuery = useDebrisStore((state) => state.searchQuery);
   const countryFilters = useDebrisStore((state) => state.countryFilters);
   const setCountryFilters = useDebrisStore((state) => state.setCountryFilters);
+
+  const [showCountryFilter, setShowCountryFilter] = useState(false);
 
   // Extract unique countries from debris data
   const availableCountries = useMemo(() => {
@@ -240,31 +242,41 @@ export function FilterPanel({ objectCounts, orbitFilters, onOrbitFilterChange }:
 
           {/* Country/Organization Filter */}
           <div className="filter-section">
-            <div className="filter-section-title">
-              Country/Organization
-              {countryFilters.length > 0 && (
-                <span className="filter-badge">{countryFilters.length}</span>
-              )}
+            <div
+              className="filter-section-title clickable"
+              onClick={() => setShowCountryFilter(!showCountryFilter)}
+            >
+              <span>
+                Country/Organization
+                {countryFilters.length > 0 && (
+                  <span className="filter-badge">{countryFilters.length}</span>
+                )}
+              </span>
+              <span className="expand-arrow">{showCountryFilter ? '▲' : '▼'}</span>
             </div>
-            {countryFilters.length > 0 && (
-              <button className="clear-all-btn" onClick={handleClearCountryFilters}>
-                Clear All
-              </button>
+            {showCountryFilter && (
+              <>
+                {countryFilters.length > 0 && (
+                  <button className="clear-all-btn" onClick={handleClearCountryFilters}>
+                    Clear All
+                  </button>
+                )}
+                <div className="country-filter-list">
+                  {availableCountries.slice(0, 15).map(({ code, count }) => (
+                    <label key={code} className="filter-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={countryFilters.includes(code)}
+                        onChange={() => handleCountryToggle(code)}
+                      />
+                      <span>
+                        {code} <span className="filter-count">({count.toLocaleString()})</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </>
             )}
-            <div className="country-filter-list">
-              {availableCountries.slice(0, 15).map(({ code, count }) => (
-                <label key={code} className="filter-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={countryFilters.includes(code)}
-                    onChange={() => handleCountryToggle(code)}
-                  />
-                  <span>
-                    {code} <span className="filter-count">({count.toLocaleString()})</span>
-                  </span>
-                </label>
-              ))}
-            </div>
           </div>
 
           {/* Propagation Mode */}
