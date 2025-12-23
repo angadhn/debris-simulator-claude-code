@@ -1,0 +1,63 @@
+.filter-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: rgba(74, 144, 226, 0.9);
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  z-index: 1050;
+  transition: all 0.3s ease;
+}
+
+.filter-button:hover {
+  background-color: rgba(74, 144, 226, 1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+  transform: scale(1.05);
+}
+
+.filter-button:active {
+  transform: scale(0.95);
+}
+
+.filter-button.active {
+  background-color: rgba(100, 180, 255, 1);
+  box-shadow: 0 0 0 4px rgba(74, 144, 226, 0.3);
+}
+
+.filter-button svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Hide on desktop - mobile only */
+@media (min-width: 769px) {
+  .filter-button {
+    display: none !important;
+  }
+}
+
+/* Touch-friendly adjustments */
+@media (hover: none) and (pointer: coarse) {
+  .filter-button {
+    min-width: 56px;
+    min-height: 56px;
+  }
+
+  .filter-button:hover {
+    background-color: rgba(74, 144, 226, 0.9);
+    transform: scale(1);
+  }
+
+  .filter-button:active {
+    transform: scale(0.95);
+    transition: transform 0.1s;
+  }
+}

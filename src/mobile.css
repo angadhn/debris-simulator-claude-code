@@ -334,3 +334,60 @@
     transition: bottom 0.3s ease;
   }
 }
+
+/* ========================================
+   MOBILE UI REFACTOR - Desktop/Mobile Visibility
+   ======================================== */
+
+/* Hide desktop components on mobile (< 768px) */
+@media (max-width: 768px) {
+  .desktop-title,
+  .desktop-view-switcher,
+  .desktop-only {
+    display: none !important;
+  }
+
+  /* Show mobile title */
+  .mobile-title {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  /* Adjust header for mobile components */
+  .app-header {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 70px;
+  }
+}
+
+/* Hide mobile components on desktop (> 768px) */
+@media (min-width: 769px) {
+  .mobile-only,
+  .mobile-title,
+  .collapsible-search-button,
+  .hamburger-menu-button,
+  .hamburger-menu-overlay,
+  .filter-button,
+  .filter-panel-overlay {
+    display: none !important;
+  }
+
+  /* Show desktop title */
+  .desktop-title {
+    display: block;
+  }
+
+  .desktop-view-switcher {
+    display: flex;
+  }
+}

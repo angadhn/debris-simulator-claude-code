@@ -213,11 +213,13 @@ export function OrbitalViewer({ className = '' }: OrbitalViewerProps) {
           {debris.length > 0 && (
             <>
               <DebrisSearchPanel
+                className="desktop-only"
                 onSearch={setSearchQuery}
                 totalObjects={totalObjectsAvailable || debris.length}
                 displayedObjects={debris.length}
               />
               <DebrisLegend
+                className="desktop-only"
                 objectCounts={objectCounts}
                 orbitFilters={orbitFilters}
                 onOrbitFilterChange={setOrbitFilters}

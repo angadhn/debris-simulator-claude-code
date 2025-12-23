@@ -8,12 +8,14 @@ interface DebrisSearchPanelProps {
   onSearch: (query: string) => void;
   totalObjects: number;
   displayedObjects: number;
+  className?: string;
 }
 
 export function DebrisSearchPanel({
   onSearch,
   totalObjects,
   displayedObjects,
+  className = '',
 }: DebrisSearchPanelProps) {
   const addDebrisObjects = useDebrisStore((state) => state.addDebrisObjects);
 
@@ -78,7 +80,7 @@ export function DebrisSearchPanel({
   };
 
   return (
-    <div className="debris-search-panel">
+    <div className={`debris-search-panel ${className}`}>
       <div className="search-header">
         <h3>Search & Filters</h3>
         <span className="search-info" title="Space-Track.org has ~25,000+ total tracked objects">

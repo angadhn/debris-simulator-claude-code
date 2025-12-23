@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
+import { useUIStore } from '../../stores/ui-store';
 import { useDebrisStore } from '../../stores/debris-store';
-import './DebrisLegend.css';
+import './FilterPanel.css';
 
 interface OrbitFilters {
   leo: boolean;
@@ -8,7 +9,7 @@ interface OrbitFilters {
   geo: boolean;
 }
 
-interface DebrisLegendProps {
+interface FilterPanelProps {
   objectCounts: {
     total: number;
     payload: number;
@@ -18,13 +19,23 @@ interface DebrisLegendProps {
   };
   orbitFilters: OrbitFilters;
   onOrbitFilterChange: (filters: OrbitFilters) => void;
-  className?: string;
 }
 
-export function DebrisLegend({ objectCounts, orbitFilters, onOrbitFilterChange, className = '' }: DebrisLegendProps) {
-  const [collapsed, setCollapsed] = useState(false);
+export function FilterPanel({ objectCounts, orbitFilters, onOrbitFilterChange }: FilterPanelProps) {
+  const filterPanelOpen = useUIStore((state) => state.filterPanelOpen);
+  const setFilterPanelOpen = useUIStore((state) => state.setFilterPanelOpen);
   const filters = useDebrisStore((state) => state.filters);
   const setFilters = useDebrisStore((state) => state.setFilters);
+
+  const handleClose = () => {
+    setFilterPanelOpen(false);
+  };
+
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      handleClose();
+    }
+  };
 
   const handleOrbitFilterToggle = (orbit: keyof OrbitFilters) => {
     const newFilters = { ...orbitFilters, [orbit]: !orbitFilters[orbit] };
@@ -38,7 +49,7 @@ export function DebrisLegend({ objectCounts, orbitFilters, onOrbitFilterChange, 
       [type]: {
         ...currentType,
         enabled: !currentType.enabled,
-        expanded: !currentType.enabled, // Auto-expand when enabling
+        expanded: !currentType.enabled,
       },
     });
   };
@@ -75,15 +86,46 @@ export function DebrisLegend({ objectCounts, orbitFilters, onOrbitFilterChange, 
     (filters.debris.enabled ? objectCounts.debris : 0) +
     (filters.unknown.enabled ? objectCounts.unknown : 0);
 
-  return (
-    <div className={`debris-legend ${collapsed ? 'collapsed' : ''} ${className}`}>
-      <div className="legend-header" onClick={() => setCollapsed(!collapsed)}>
-        <h3>Space Debris</h3>
-        <button className="collapse-btn">{collapsed ? '▼' : '▲'}</button>
-      </div>
+  // Close on ESC key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && filterPanelOpen) {
+        handleClose();
+      }
+    };
 
-      {!collapsed && (
-        <div className="legend-content">
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [filterPanelOpen]);
+
+  // Body scroll lock
+  useEffect(() => {
+    if (filterPanelOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [filterPanelOpen]);
+
+  if (!filterPanelOpen) return null;
+
+  return (
+    <div className="filter-panel-overlay" onClick={handleOverlayClick}>
+      <div className="filter-panel-sheet">
+        <div className="filter-panel-drag-handle"></div>
+
+        <div className="filter-panel-header">
+          <h3>Filters</h3>
+          <button className="filter-panel-close-button" onClick={handleClose} aria-label="Close filters">
+            ×
+          </button>
+        </div>
+
+        <div className="filter-panel-content">
           {/* Orbit Range Filters */}
           <div className="filter-section">
             <div className="filter-section-title">Orbit Range</div>
@@ -120,7 +162,10 @@ export function DebrisLegend({ objectCounts, orbitFilters, onOrbitFilterChange, 
             <strong>{objectCounts.total.toLocaleString()}</strong> objects visible
           </div>
 
-          <div className="legend-items">
+          {/* Object Type Filters */}
+          <div className="filter-section">
+            <div className="filter-section-title">Object Types</div>
+
             {/* Payload */}
             <div className="type-filter-group">
               <div
@@ -284,7 +329,7 @@ export function DebrisLegend({ objectCounts, orbitFilters, onOrbitFilterChange, 
             Click to show/hide types • Click ▼ for sizes
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

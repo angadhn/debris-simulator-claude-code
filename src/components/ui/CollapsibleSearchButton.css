@@ -1,0 +1,138 @@
+.collapsible-search-button {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 1100;
+  transition: all 0.3s ease;
+}
+
+.collapsible-search-button.collapsed {
+  width: 44px;
+  height: 44px;
+}
+
+.collapsible-search-button.expanded {
+  width: calc(100vw - 120px);
+  max-width: 400px;
+}
+
+.search-icon-button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.search-icon-button:hover {
+  background-color: rgba(74, 144, 226, 0.9);
+  border-color: rgba(74, 144, 226, 0.9);
+}
+
+.search-icon-button:active {
+  transform: scale(0.95);
+}
+
+.search-input-expanded {
+  display: flex;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  animation: expandSearch 0.3s ease;
+}
+
+.search-input-expanded .search-input {
+  flex: 1;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 14px;
+  outline: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.search-input-expanded .search-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.search-close-button {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+  line-height: 1;
+  border-radius: 50%;
+  margin-right: 2px;
+}
+
+.search-close-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.search-close-button:active {
+  transform: scale(0.95);
+}
+
+/* Animation */
+@keyframes expandSearch {
+  from {
+    width: 44px;
+    opacity: 0.8;
+  }
+  to {
+    width: 100%;
+    opacity: 1;
+  }
+}
+
+/* Hide on desktop */
+@media (min-width: 769px) {
+  .collapsible-search-button {
+    display: none !important;
+  }
+}
+
+/* Small screens - make search take more width */
+@media (max-width: 375px) {
+  .collapsible-search-button.expanded {
+    width: calc(100vw - 80px);
+  }
+}
+
+/* Touch-friendly adjustments */
+@media (hover: none) and (pointer: coarse) {
+  .search-icon-button,
+  .search-close-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .search-icon-button:hover {
+    background-color: rgba(0, 0, 0, 0.85);
+  }
+
+  .search-icon-button:active {
+    background-color: rgba(74, 144, 226, 0.9);
+    transform: scale(0.95);
+    transition: all 0.1s;
+  }
+}

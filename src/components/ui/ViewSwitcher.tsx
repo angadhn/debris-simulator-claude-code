@@ -1,7 +1,11 @@
 import { useUIStore } from '../../stores/ui-store';
 import type { ViewMode } from '../../types/simulation';
 
-export function ViewSwitcher() {
+interface ViewSwitcherProps {
+  className?: string;
+}
+
+export function ViewSwitcher({ className = '' }: ViewSwitcherProps = {}) {
   const { viewMode, setViewMode } = useUIStore();
 
   const handleModeChange = (mode: ViewMode) => {
@@ -9,7 +13,7 @@ export function ViewSwitcher() {
   };
 
   return (
-    <div className="view-switcher">
+    <div className={`view-switcher ${className}`}>
       <div className="view-switcher-buttons">
         <button
           className={`view-button ${viewMode === 'orbital' ? 'active' : ''}`}
