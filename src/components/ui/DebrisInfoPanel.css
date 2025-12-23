@@ -4,10 +4,12 @@
   left: 20px;
   background: rgba(0, 0, 0, 0.9);
   color: white;
-  padding: 20px;
+  padding: 12px 15px;
   border-radius: 8px;
-  min-width: 350px;
-  max-width: 450px;
+  min-width: 280px;
+  max-width: 320px;
+  max-height: calc(100vh - 200px); /* Prevent covering search bar */
+  overflow-y: auto;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
   z-index: 1000;
@@ -33,8 +35,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
-  padding-bottom: 10px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
   border-bottom: 2px solid #4a90e2;
 }
 
@@ -46,10 +48,13 @@
 
 .info-header h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 600;
   color: #4a90e2;
   flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .header-buttons {
@@ -98,18 +103,18 @@
 .info-content {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 10px;
 }
 
 .info-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 .info-section h4 {
   margin: 0;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   color: #aaa;
@@ -119,8 +124,9 @@
 .info-row {
   display: flex;
   justify-content: space-between;
-  padding: 6px 0;
+  padding: 4px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 8px;
 }
 
 .info-row:last-child {
@@ -128,21 +134,23 @@
 }
 
 .info-row .label {
-  font-size: 14px;
+  font-size: 12px;
   color: #bbb;
+  white-space: nowrap;
 }
 
 .info-row .value {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   color: white;
+  text-align: right;
 }
 
 .tle-line {
   font-family: 'Courier New', monospace;
-  font-size: 11px;
+  font-size: 9px;
   background: rgba(255, 255, 255, 0.05);
-  padding: 6px 8px;
+  padding: 4px 6px;
   border-radius: 4px;
   color: #4a90e2;
   overflow-x: auto;
@@ -150,23 +158,23 @@
 }
 
 .info-hint {
-  font-size: 11px;
+  font-size: 10px;
   color: #888;
   text-align: center;
   font-style: italic;
-  margin-top: 5px;
+  margin-top: 3px;
 }
 
 .tle-epoch {
   background: rgba(74, 144, 226, 0.1);
-  padding: 8px;
+  padding: 5px 6px;
   border-radius: 4px;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .tle-age {
   color: #aaa;
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .info-icon {

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useMemo } from 'react';
 import * as Cesium from 'cesium';
 import { useDebrisStore } from '../../stores/debris-store';
+import { useUIStore } from '../../stores/ui-store';
 import { propagateAllDebris, getDebrisColor, generateOrbitPath, propagatePosition } from '../../utils/orbital-propagation';
+import { parseTLEOrbitalElements, propagateKeplerPosition } from '../../utils/kepler-propagation';
 import type { TLEData } from '../../services/debris-api';
 import type { DebrisPosition } from '../../utils/orbital-propagation';
 
@@ -19,11 +21,15 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
   const isAnimating = useDebrisStore((state) => state.isAnimating);
   const animationSpeed = useDebrisStore((state) => state.animationSpeed);
   const setSelectedDebrisId = useDebrisStore((state) => state.setSelectedDebrisId);
+  const propagationMode = useUIStore((state) => state.propagationMode);
 
   const pointCollectionRef = useRef<Cesium.PointPrimitiveCollection | null>(null);
   const orbitPathRef = useRef<Cesium.Entity | null>(null);
   const debrisPositionsRef = useRef<DebrisPosition[]>([]);
+  const keplerElementsRef = useRef<Map<string, ReturnType<typeof parseTLEOrbitalElements>>>(new Map());
   const animatedEntityRef = useRef<Cesium.Entity | null>(null);
+  const trailEntityRef = useRef<Cesium.Entity | null>(null);
+  const trailPositionsRef = useRef<Cesium.Cartesian3[]>([]);
   const preRenderListenerRef = useRef<(() => void) | null>(null);
 
   // Filter debris based on all filters
@@ -84,11 +90,11 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
     });
   }, [debris, filters, orbitFilters, countryFilters, searchQuery]);
 
-  // Render debris points - ONLY when viewer or filteredDebris changes
+  // Render debris points - ONLY when viewer, filteredDebris, or propagationMode changes
   useEffect(() => {
     if (!viewer) return;
 
-    console.log(`Rendering ${filteredDebris.length} debris objects`);
+    console.log(`Rendering ${filteredDebris.length} debris objects using ${propagationMode.toUpperCase()} propagation`);
 
     // Remove existing points
     if (pointCollectionRef.current) {
@@ -103,48 +109,103 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
     // Create point primitive collection
     const pointCollection = new Cesium.PointPrimitiveCollection();
 
-    // Convert to TLEData format
-    const tleDataList: TLEData[] = filteredDebris.map((d) => ({
-      NORAD_CAT_ID: d.noradId.toString(),
-      OBJECT_NAME: d.name,
-      OBJECT_TYPE: d.objectType,
-      TLE_LINE0: `0 ${d.name}`,
-      TLE_LINE1: d.tle.line1,
-      TLE_LINE2: d.tle.line2,
-      EPOCH: '',
-      INCLINATION: d.inclination?.toString() || '0',
-      ECCENTRICITY: '0',
-      MEAN_MOTION: '0',
-      SEMIMAJOR_AXIS: '0',
-      PERIOD: (d.orbitPeriod ? d.orbitPeriod / 60 : 0).toString(),
-      APOAPSIS: d.apogee?.toString() || '0',
-      PERIAPSIS: d.perigee?.toString() || '0',
-      COUNTRY_CODE: '',
-      LAUNCH_DATE: '',
-      RCS_SIZE: '',
-    }));
-
-    // Propagate positions
     const currentTime = Cesium.JulianDate.toDate(viewer.clock.currentTime);
-    const positions = propagateAllDebris(tleDataList, currentTime);
-    debrisPositionsRef.current = positions;
 
-    // Add points
-    positions.forEach((pos) => {
-      pointCollection.add({
-        position: pos.position,
-        color: getDebrisColor(pos.objectType),
-        pixelSize: 4,
-        outlineColor: Cesium.Color.BLACK,
-        outlineWidth: 1,
-        id: pos.noradId,
+    if (propagationMode === 'kepler') {
+      // Use Kepler propagation (fast mode)
+      console.time('Kepler propagation');
+
+      // Clear previous Kepler elements
+      keplerElementsRef.current.clear();
+
+      const positions: DebrisPosition[] = [];
+
+      filteredDebris.forEach((d) => {
+        try {
+          // Parse orbital elements from TLE
+          const orbitalElements = parseTLEOrbitalElements(d.tle.line1, d.tle.line2);
+
+          // Store for later animation
+          keplerElementsRef.current.set(d.noradId.toString(), orbitalElements);
+
+          // Propagate position
+          const [x, y, z] = propagateKeplerPosition(orbitalElements, currentTime);
+          const position = new Cesium.Cartesian3(x, y, z);
+
+          // Add point
+          pointCollection.add({
+            position,
+            color: getDebrisColor(d.objectType),
+            pixelSize: 4,
+            outlineColor: Cesium.Color.BLACK,
+            outlineWidth: 1,
+            id: d.noradId.toString(),
+          });
+
+          // Store position (satrec is null for Kepler mode)
+          positions.push({
+            noradId: d.noradId.toString(),
+            name: d.name,
+            objectType: d.objectType,
+            position,
+            satrec: null as any, // Not used in Kepler mode
+          });
+        } catch (error) {
+          console.error(`Failed to propagate debris ${d.noradId} with Kepler:`, error);
+        }
       });
-    });
+
+      debrisPositionsRef.current = positions;
+      console.timeEnd('Kepler propagation');
+      console.log(`Kepler: Added ${positions.length} debris points to scene`);
+
+    } else {
+      // Use SGP4 propagation (accurate mode)
+      console.time('SGP4 propagation');
+
+      // Convert to TLEData format
+      const tleDataList: TLEData[] = filteredDebris.map((d) => ({
+        NORAD_CAT_ID: d.noradId.toString(),
+        OBJECT_NAME: d.name,
+        OBJECT_TYPE: d.objectType,
+        TLE_LINE0: `0 ${d.name}`,
+        TLE_LINE1: d.tle.line1,
+        TLE_LINE2: d.tle.line2,
+        EPOCH: '',
+        INCLINATION: d.inclination?.toString() || '0',
+        ECCENTRICITY: '0',
+        MEAN_MOTION: '0',
+        SEMIMAJOR_AXIS: '0',
+        PERIOD: (d.orbitPeriod ? d.orbitPeriod / 60 : 0).toString(),
+        APOAPSIS: d.apogee?.toString() || '0',
+        PERIAPSIS: d.perigee?.toString() || '0',
+        COUNTRY_CODE: '',
+        LAUNCH_DATE: '',
+        RCS_SIZE: '',
+      }));
+
+      // Propagate positions
+      const positions = propagateAllDebris(tleDataList, currentTime);
+      debrisPositionsRef.current = positions;
+
+      // Add points
+      positions.forEach((pos) => {
+        pointCollection.add({
+          position: pos.position,
+          color: getDebrisColor(pos.objectType),
+          pixelSize: 4,
+          outlineColor: Cesium.Color.BLACK,
+          outlineWidth: 1,
+          id: pos.noradId,
+        });
+      });
+
+      console.timeEnd('SGP4 propagation');
+      console.log(`SGP4: Added ${positions.length} debris points to scene`);
+    }
 
     viewer.scene.primitives.add(pointCollection);
     pointCollectionRef.current = pointCollection;
-
-    console.log(`Added ${positions.length} debris points to scene`);
 
     return () => {
       if (pointCollectionRef.current && viewer) {
@@ -152,7 +213,7 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
         pointCollectionRef.current = null;
       }
     };
-  }, [viewer, filteredDebris]);
+  }, [viewer, filteredDebris, propagationMode]);
 
   // Handle clicks
   useEffect(() => {
@@ -164,13 +225,14 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
       const pickedObject = viewer.scene.pick(click.position);
 
       if (Cesium.defined(pickedObject) && pickedObject.id) {
-        const noradId = parseInt(pickedObject.id);
+        const pickedIdStr = String(pickedObject.id);
+        const noradId = parseInt(pickedIdStr);
         setSelectedDebrisId(noradId);
         console.log(`Clicked debris: NORAD ${noradId}`);
 
         // Find selected debris position
         const selectedPos = debrisPositionsRef.current.find(
-          (p) => parseInt(p.noradId) === noradId
+          (p) => p.noradId === pickedIdStr
         );
 
         if (!selectedPos) {
@@ -303,13 +365,21 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
         viewer.entities.remove(animatedEntityRef.current);
         animatedEntityRef.current = null;
       }
-      // Restore point collection opacity
+      // Remove trail
+      if (trailEntityRef.current && viewer) {
+        viewer.entities.remove(trailEntityRef.current);
+        trailEntityRef.current = null;
+      }
+      trailPositionsRef.current = [];
+
+      // Restore point collection opacity and visibility
       if (pointCollectionRef.current) {
         for (let i = 0; i < pointCollectionRef.current.length; i++) {
           const point = pointCollectionRef.current.get(i);
-          point.color = getDebrisColor(point.id ?
-            debrisPositionsRef.current.find(p => parseInt(p.noradId) === point.id)?.objectType || '' : ''
-          );
+          point.show = true; // Make sure all points are visible
+          const pointIdStr = String(point.id);
+          const debris = debrisPositionsRef.current.find(p => p.noradId === pointIdStr);
+          point.color = debris ? getDebrisColor(debris.objectType) : Cesium.Color.WHITE;
         }
       }
       return;
@@ -335,14 +405,18 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
     if (pointCollectionRef.current) {
       for (let i = 0; i < pointCollectionRef.current.length; i++) {
         const point = pointCollectionRef.current.get(i);
-        if (point.id === selectedDebrisId) {
+        const pointIdStr = String(point.id);
+        const selectedIdStr = String(selectedDebrisId);
+
+        if (pointIdStr === selectedIdStr) {
           point.show = false; // Hide the static point for selected debris
         } else {
           // Dim other points
-          const originalColor = getDebrisColor(point.id ?
-            debrisPositionsRef.current.find(p => parseInt(p.noradId) === point.id)?.objectType || '' : ''
-          );
-          point.color = originalColor.withAlpha(0.2);
+          const debris = debrisPositionsRef.current.find(p => p.noradId === pointIdStr);
+          if (debris) {
+            const originalColor = getDebrisColor(debris.objectType);
+            point.color = originalColor.withAlpha(0.2);
+          }
         }
       }
     }
@@ -361,6 +435,22 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
 
     animatedEntityRef.current = animatedEntity;
 
+    // Create trail entity
+    trailPositionsRef.current = [];
+    const trailEntity = viewer.entities.add({
+      name: `Trail for ${selectedPos.name}`,
+      polyline: {
+        positions: new Cesium.CallbackProperty(() => {
+          return trailPositionsRef.current;
+        }, false),
+        width: 3,
+        material: Cesium.Color.RED.withAlpha(0.8),
+        clampToGround: false,
+      },
+    });
+
+    trailEntityRef.current = trailEntity;
+
     // Set up animation loop
     const preRenderListener = () => {
       if (!viewer || !animatedEntity || !selectedPos) return;
@@ -368,11 +458,30 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
       // Get current simulation time
       const currentTime = Cesium.JulianDate.toDate(viewer.clock.currentTime);
 
-      // Propagate position
-      const result = propagatePosition(selectedPos.satrec, currentTime);
+      let currentPosition: Cesium.Cartesian3 | null = null;
 
-      if (result) {
-        animatedEntity.position = new Cesium.ConstantPositionProperty(result.position);
+      if (propagationMode === 'kepler') {
+        // Use Kepler propagation for animation
+        const keplerElements = keplerElementsRef.current.get(selectedDebrisId.toString());
+        if (keplerElements) {
+          const [x, y, z] = propagateKeplerPosition(keplerElements, currentTime);
+          const position = new Cesium.Cartesian3(x, y, z);
+          animatedEntity.position = new Cesium.ConstantPositionProperty(position);
+          currentPosition = position;
+        }
+      } else {
+        // Use SGP4 propagation for animation
+        const result = propagatePosition(selectedPos.satrec, currentTime);
+        if (result) {
+          animatedEntity.position = new Cesium.ConstantPositionProperty(result.position);
+          currentPosition = result.position;
+        }
+      }
+
+      // Update trail - add current position
+      if (currentPosition) {
+        trailPositionsRef.current.push(currentPosition.clone());
+        // No limit - allow full orbital track to be visible
       }
     };
 
@@ -391,8 +500,13 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
         viewer.entities.remove(animatedEntityRef.current);
         animatedEntityRef.current = null;
       }
+      if (trailEntityRef.current && viewer) {
+        viewer.entities.remove(trailEntityRef.current);
+        trailEntityRef.current = null;
+      }
+      trailPositionsRef.current = [];
     };
-  }, [viewer, isAnimating, selectedDebrisId, animationSpeed]);
+  }, [viewer, isAnimating, selectedDebrisId, animationSpeed, propagationMode]);
 
   return null;
 }

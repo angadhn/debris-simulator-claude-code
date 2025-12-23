@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import type { ViewMode } from '../types/simulation';
 import type { DebrisObject } from '../types/debris';
 
+export type PropagationMode = 'sgp4' | 'kepler';
+
 interface UIStore {
   viewMode: ViewMode;
   selectedDebris: DebrisObject | null;
@@ -12,12 +14,16 @@ interface UIStore {
   searchExpanded: boolean;
   filterPanelOpen: boolean;
 
+  // Propagation mode (SGP4 = accurate, Kepler = fast)
+  propagationMode: PropagationMode;
+
   setViewMode: (mode: ViewMode) => void;
   setSelectedDebris: (debris: DebrisObject | null) => void;
   setCesiumViewer: (viewer: any) => void;
   setHamburgerMenuOpen: (open: boolean) => void;
   setSearchExpanded: (expanded: boolean) => void;
   setFilterPanelOpen: (open: boolean) => void;
+  setPropagationMode: (mode: PropagationMode) => void;
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -27,6 +33,7 @@ export const useUIStore = create<UIStore>((set) => ({
   hamburgerMenuOpen: false,
   searchExpanded: false,
   filterPanelOpen: false,
+  propagationMode: 'sgp4', // Default to accurate mode
 
   setViewMode: (mode) => set({ viewMode: mode }),
   setSelectedDebris: (debris) => set({ selectedDebris: debris }),
@@ -34,4 +41,5 @@ export const useUIStore = create<UIStore>((set) => ({
   setHamburgerMenuOpen: (open) => set({ hamburgerMenuOpen: open }),
   setSearchExpanded: (expanded) => set({ searchExpanded: expanded }),
   setFilterPanelOpen: (open) => set({ filterPanelOpen: open }),
+  setPropagationMode: (mode) => set({ propagationMode: mode }),
 }));

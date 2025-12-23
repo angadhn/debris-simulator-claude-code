@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { DebrisAPI } from '../../services/debris-api';
 import { useDebrisStore } from '../../stores/debris-store';
+import { useUIStore } from '../../stores/ui-store';
 import { convertTLEArrayToDebrisObjects } from '../../utils/tle-converter';
 import './DebrisSearchPanel.css';
 
@@ -21,6 +22,8 @@ export function DebrisSearchPanel({
   const addDebrisObjects = useDebrisStore((state) => state.addDebrisObjects);
   const countryFilters = useDebrisStore((state) => state.countryFilters);
   const setCountryFilters = useDebrisStore((state) => state.setCountryFilters);
+  const propagationMode = useUIStore((state) => state.propagationMode);
+  const setPropagationMode = useUIStore((state) => state.setPropagationMode);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [realTotalCount, setRealTotalCount] = useState<number | null>(null);
@@ -177,6 +180,36 @@ export function DebrisSearchPanel({
             </div>
           </div>
         )}
+      </div>
+
+      {/* Propagation Mode Toggle */}
+      <div className="propagation-mode-section">
+        <div className="mode-header">
+          <span className="mode-title">Propagation Mode</span>
+          <span className="mode-info" title={
+            propagationMode === 'sgp4'
+              ? 'SGP4: Accurate orbital propagation with atmospheric drag and perturbations'
+              : 'Kepler: Fast 2-body propagation (100-200x faster, ~1% position error per day)'
+          }>
+            ⓘ
+          </span>
+        </div>
+        <div className="mode-toggle-container">
+          <button
+            className={`mode-toggle-btn ${propagationMode === 'sgp4' ? 'active' : ''}`}
+            onClick={() => setPropagationMode('sgp4')}
+            title="Accurate (slower)"
+          >
+            SGP4
+          </button>
+          <button
+            className={`mode-toggle-btn ${propagationMode === 'kepler' ? 'active' : ''}`}
+            onClick={() => setPropagationMode('kepler')}
+            title="Fast (less accurate)"
+          >
+            Kepler
+          </button>
+        </div>
       </div>
 
       <div className="total-count">
