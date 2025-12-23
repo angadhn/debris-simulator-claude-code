@@ -458,9 +458,11 @@
     display: none !important;
   }
 
-  /* Position help button on desktop - just above Cesium home button */
+  /* Position help button on desktop - top right to avoid time panel */
   .help-button {
-    bottom: calc(16px + 44px + 8px) !important; /* Home button height + gap */
+    top: 80px !important;
+    bottom: auto !important;
+    right: 20px !important;
   }
 
   /* Show desktop title */
