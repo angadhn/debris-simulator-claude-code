@@ -168,3 +168,29 @@
   color: #aaa;
   font-size: 11px;
 }
+
+.info-icon {
+  color: white;
+  margin-left: 8px;
+  flex-shrink: 0;
+  opacity: 0.9;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.debris-info-panel.collapsed {
+  cursor: pointer;
+}
+
+.debris-info-panel.collapsed:hover .info-icon {
+  opacity: 1;
+  animation: none;
+}
