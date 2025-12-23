@@ -190,6 +190,10 @@
   cursor: pointer;
 }
 
+.debris-info-panel.collapsed .header-buttons {
+  display: none;
+}
+
 .debris-info-panel.collapsed:hover .info-icon {
   opacity: 1;
   animation: none;
