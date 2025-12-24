@@ -301,6 +301,32 @@ function orbitalElementsToCartesian(a, e, i, Ω, ω, E) {
 }
 ```
 
+#### Step 5: ECI to ECEF Coordinate Frame Conversion
+
+**Critical Fix:** The Kepler propagation outputs positions in the ECI (Earth-Centered Inertial) frame, but Cesium expects positions in the ECEF (Earth-Centered Earth-Fixed) frame. SGP4 positions are also converted from ECI to ECEF before rendering.
+
+If Kepler output remains in ECI while SGP4 output is in ECEF, switching between modes causes an apparent position jump equal to the Earth's rotation angle (GMST - Greenwich Mean Sidereal Time). This rotation is around the Z-axis only, so:
+- The Z coordinate matches perfectly
+- The X and Y coordinates differ by a rotation angle
+
+**The fix:** Convert Kepler ECI output to ECEF using the same GMST rotation:
+
+```typescript
+// Get Greenwich Mean Sidereal Time for ECI→ECEF conversion
+const gmst = satellite.gstime(currentTime);
+const cosGmst = Math.cos(gmst);
+const sinGmst = Math.sin(gmst);
+
+// Rotation from ECI to ECEF (rotation around Z-axis by -GMST)
+const xEcef = cosGmst * xEci + sinGmst * yEci;
+const yEcef = -sinGmst * xEci + cosGmst * yEci;
+const zEcef = zEci; // Z unchanged (rotation axis)
+
+return [xEcef, yEcef, zEcef];
+```
+
+This ensures both SGP4 and Kepler positions are in the same reference frame. When switching modes, the position difference should be ~0 km at the moment of switch, with divergence only appearing over time due to the missing perturbations in the Kepler model.
+
 ### Performance Optimization: Incremental Updates
 
 For real-time visualization in Cesium, we use an incremental approach:
@@ -420,7 +446,12 @@ type PropagationMode = 'sgp4' | 'kepler';
 
 ### Cesium Integration
 
-Both methods output positions in the **ECI (Earth-Centered Inertial)** frame, which Cesium converts to its internal ECEF (Earth-Centered Earth-Fixed) representation for rendering.
+Both propagation methods output positions in the **ECEF (Earth-Centered Earth-Fixed)** frame for Cesium rendering:
+
+- **SGP4:** Uses `satellite.js` to propagate in ECI, then converts to ECEF using `eciToEcef()` in `orbital-propagation.ts`
+- **Kepler:** Computes position in ECI from orbital elements, then converts to ECEF using GMST rotation (see "Step 5: ECI to ECEF Coordinate Frame Conversion" above)
+
+This consistency is critical for smooth mode switching—both methods must produce positions in the same reference frame.
 
 ## Educational Applications
 
