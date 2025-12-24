@@ -4,6 +4,7 @@ import { useDebrisStore } from '../../stores/debris-store';
 import { useUIStore } from '../../stores/ui-store';
 import { propagateAllDebris, getDebrisColor, generateOrbitPath, propagatePosition } from '../../utils/orbital-propagation';
 import { parseTLEOrbitalElements, propagateKeplerPosition } from '../../utils/kepler-propagation';
+import * as satellite from 'satellite.js';
 import type { TLEData } from '../../services/debris-api';
 import type { DebrisPosition } from '../../utils/orbital-propagation';
 
@@ -116,23 +117,56 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
     if (propagationMode === 'kepler') {
       // Use Kepler propagation (fast mode)
       console.time('Kepler propagation');
+      console.log(`[KEPLER] Rendering at time: ${currentTime.toISOString()}`);
 
       // Clear previous Kepler elements
       keplerElementsRef.current.clear();
 
       const positions: DebrisPosition[] = [];
+      let comparisonCount = 0;
 
       filteredDebris.forEach((d) => {
         try {
-          // Parse orbital elements from TLE
-          const orbitalElements = parseTLEOrbitalElements(d.tle.line1, d.tle.line2);
+          // Parse orbital elements from TLE, using CURRENT TIME as reference
+          // This ensures Kepler matches SGP4 position at the moment of switching modes
+          const orbitalElements = parseTLEOrbitalElements(d.tle.line1, d.tle.line2, currentTime);
 
           // Store for later animation
           keplerElementsRef.current.set(d.noradId.toString(), orbitalElements);
 
-          // Propagate position
+          // Propagate position (should be nearly identical to SGP4 at currentTime)
           const [x, y, z] = propagateKeplerPosition(orbitalElements, currentTime);
           const position = new Cesium.Cartesian3(x, y, z);
+
+          // DEBUG: Compare with SGP4 for first 5 objects (both in ECEF)
+          if (comparisonCount < 5) {
+            const satrec = satellite.twoline2satrec(d.tle.line1, d.tle.line2);
+            const sgp4Result = satellite.propagate(satrec, currentTime);
+            if (sgp4Result && sgp4Result.position && typeof sgp4Result.position !== 'boolean') {
+              // Convert SGP4 ECI to ECEF for fair comparison
+              const sgp4Eci = sgp4Result.position;
+              const gmst = satellite.gstime(currentTime);
+              const cosGmst = Math.cos(gmst);
+              const sinGmst = Math.sin(gmst);
+              const sgp4Ecef = {
+                x: cosGmst * sgp4Eci.x + sinGmst * sgp4Eci.y,
+                y: -sinGmst * sgp4Eci.x + cosGmst * sgp4Eci.y,
+                z: sgp4Eci.z
+              };
+
+              const keplerPos = { x: x/1000, y: y/1000, z: z/1000 }; // Convert to km (already ECEF)
+              const diff = Math.sqrt(
+                Math.pow(sgp4Ecef.x - keplerPos.x, 2) +
+                Math.pow(sgp4Ecef.y - keplerPos.y, 2) +
+                Math.pow(sgp4Ecef.z - keplerPos.z, 2)
+              );
+              console.log(`[DEBUG ${d.name}] SGP4 vs Kepler at currentTime (ECEF):`);
+              console.log(`  SGP4:   [${sgp4Ecef.x.toFixed(2)}, ${sgp4Ecef.y.toFixed(2)}, ${sgp4Ecef.z.toFixed(2)}] km`);
+              console.log(`  Kepler: [${keplerPos.x.toFixed(2)}, ${keplerPos.y.toFixed(2)}, ${keplerPos.z.toFixed(2)}] km`);
+              console.log(`  Difference: ${diff.toFixed(2)} km`);
+            }
+            comparisonCount++;
+          }
 
           // Add point
           pointCollection.add({
@@ -144,13 +178,14 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
             id: d.noradId.toString(),
           });
 
-          // Store position (satrec is null for Kepler mode)
+          // Store position - also store satrec for orbit path generation
+          const satrec = satellite.twoline2satrec(d.tle.line1, d.tle.line2);
           positions.push({
             noradId: d.noradId.toString(),
             name: d.name,
             objectType: d.objectType,
             position,
-            satrec: null as any, // Not used in Kepler mode
+            satrec, // Store satrec for orbit path generation (even in Kepler mode)
           });
         } catch (error) {
           console.error(`Failed to propagate debris ${d.noradId} with Kepler:`, error);
@@ -159,11 +194,12 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
 
       debrisPositionsRef.current = positions;
       console.timeEnd('Kepler propagation');
-      console.log(`Kepler: Added ${positions.length} debris points to scene`);
+      console.log(`Kepler: Added ${positions.length} debris points to scene (initialized at current time - should match SGP4)`);
 
     } else {
       // Use SGP4 propagation (accurate mode)
       console.time('SGP4 propagation');
+      console.log(`[SGP4] Rendering at time: ${currentTime.toISOString()}`);
 
       // Convert to TLEData format
       const tleDataList: TLEData[] = filteredDebris.map((d) => ({
@@ -189,6 +225,18 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
       // Propagate positions
       const positions = propagateAllDebris(tleDataList, currentTime);
       debrisPositionsRef.current = positions;
+
+      // DEBUG: Log first few positions for comparison with Kepler
+      if (positions.length > 0 && positions.length <= 5) {
+        positions.forEach((pos) => {
+          const posKm = {
+            x: pos.position.x / 1000,
+            y: pos.position.y / 1000,
+            z: pos.position.z / 1000
+          };
+          console.log(`[SGP4 DEBUG ${pos.name}] Position: [${posKm.x.toFixed(2)}, ${posKm.y.toFixed(2)}, ${posKm.z.toFixed(2)}] km at ${currentTime.toISOString()}`);
+        });
+      }
 
       // Add points
       positions.forEach((pos) => {
@@ -252,36 +300,28 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
 
         // Find the debris object to get orbital period
         const debrisObject = debris.find(d => d.noradId === noradId);
-        const orbitPeriod = debrisObject?.orbitPeriod || 5400; // Default to 90 minutes if not found
+        const orbitPeriod = debrisObject?.orbitPeriod || 5400; // Default to 90 minutes
 
-        // Generate orbit path for exactly one orbital period
+        // Generate orbit path for one orbital period
         const currentTime = Cesium.JulianDate.toDate(viewer.clock.currentTime);
-        // Sample every period/200 to get ~200 points per orbit
-        const samplingInterval = Math.max(Math.floor(orbitPeriod / 200), 10); // At least 10 seconds between samples
-        const orbitPositions = generateOrbitPath(selectedPos.satrec, currentTime, orbitPeriod, samplingInterval);
+        const samplingInterval = Math.max(Math.floor(orbitPeriod / 200), 10);
 
-        console.log(`Generating orbit for ${orbitPeriod}s period with ${samplingInterval}s sampling (${Math.floor(orbitPeriod / samplingInterval)} points)`);
+        // Generate SGP4 orbit path (CYAN)
+        const sgp4OrbitPositions = generateOrbitPath(selectedPos.satrec, currentTime, orbitPeriod, samplingInterval);
 
-        if (orbitPositions.length < 2) {
-          console.warn('Not enough orbit positions generated');
-          return;
+        if (sgp4OrbitPositions.length >= 2) {
+          const orbitEntity = viewer.entities.add({
+            name: `Orbit path for ${selectedPos.name}`,
+            polyline: {
+              positions: sgp4OrbitPositions,
+              width: 3,
+              material: Cesium.Color.CYAN.withAlpha(0.8),
+              clampToGround: false,
+            },
+          });
+          orbitPathRef.current = orbitEntity;
+          console.log(`Orbit path: ${sgp4OrbitPositions.length} positions for ${orbitPeriod}s period`);
         }
-
-        console.log(`Generated ${orbitPositions.length} orbit positions`);
-
-        // Create orbit entity
-        const orbitEntity = viewer.entities.add({
-          name: `Orbit path for ${selectedPos.name}`,
-          polyline: {
-            positions: orbitPositions,
-            width: 3,
-            material: Cesium.Color.CYAN.withAlpha(0.8),
-            clampToGround: false,
-          },
-        });
-
-        orbitPathRef.current = orbitEntity;
-        console.log('Orbit path rendered - you should see a cyan line!');
 
       } else {
         // Clicked empty space - clear selection

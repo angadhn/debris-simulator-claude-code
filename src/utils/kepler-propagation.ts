@@ -280,27 +280,30 @@ export function rv2coe(
 }
 
 /**
- * Parse TLE and compute OSCULATING orbital elements at epoch
+ * Parse TLE and compute OSCULATING orbital elements at a reference time
  *
  * This function:
  * 1. Parses the TLE using satellite.js
- * 2. Uses SGP4 to propagate to the TLE epoch (t=0) to get position/velocity
+ * 2. Uses SGP4 to propagate to the reference time to get position/velocity
  * 3. Converts the resulting state vector to osculating Keplerian elements via RV2COE
  *
- * This ensures the Kepler propagator starts from the same physical state
- * as SGP4, with divergence only reflecting missing perturbations.
+ * By default, uses the CURRENT TIME as the reference (not TLE epoch).
+ * This ensures SGP4 and Kepler show the same position when switching modes,
+ * with divergence only occurring as time progresses forward.
+ *
+ * @param line1 TLE line 1
+ * @param line2 TLE line 2
+ * @param referenceTime Optional reference time (defaults to current time)
  */
-export function parseTLEOrbitalElements(line1: string, line2: string) {
+export function parseTLEOrbitalElements(line1: string, line2: string, referenceTime?: Date) {
   // Parse TLE using satellite.js
   const satrec = satellite.twoline2satrec(line1, line2);
 
-  // Extract epoch date from satrec
-  const epochYear = satrec.epochyr < 57 ? 2000 + satrec.epochyr : 1900 + satrec.epochyr;
-  const epochDate = new Date(Date.UTC(epochYear, 0, 1));
-  // Add fractional days (epochdays is 1-indexed day of year with fraction)
-  epochDate.setTime(epochDate.getTime() + (satrec.epochdays - 1) * 86400 * 1000);
+  // Use reference time (default to NOW) instead of TLE epoch
+  // This ensures Kepler and SGP4 match at the moment of switching modes
+  const epochDate = referenceTime || new Date();
 
-  // Use SGP4 to get position/velocity at epoch (t=0)
+  // Use SGP4 to get position/velocity at reference time
   const positionAndVelocity = satellite.propagate(satrec, epochDate);
 
   // Check for propagation errors
@@ -326,7 +329,8 @@ export function parseTLEOrbitalElements(line1: string, line2: string) {
   // Convert state vector to osculating orbital elements
   const osculatingElements = rv2coe(r, v);
 
-  return {
+  // DEBUG: Verify round-trip accuracy at epoch
+  const debugElements = {
     epochDate,
     semiMajorAxis: osculatingElements.semiMajorAxis,
     eccentricity: osculatingElements.eccentricity,
@@ -336,6 +340,64 @@ export function parseTLEOrbitalElements(line1: string, line2: string) {
     meanAnomalyAtEpoch: osculatingElements.meanAnomaly,
     meanMotion: osculatingElements.meanMotion,
   };
+
+  // Compute position at epoch using Kepler and compare to SGP4
+  const keplerAtEpoch = propagateKeplerPositionInternal(debugElements, epochDate);
+  const sgp4Pos = [r[0] * 1000, r[1] * 1000, r[2] * 1000]; // Convert to meters
+
+  const posDiff = Math.sqrt(
+    Math.pow(keplerAtEpoch[0] - sgp4Pos[0], 2) +
+    Math.pow(keplerAtEpoch[1] - sgp4Pos[1], 2) +
+    Math.pow(keplerAtEpoch[2] - sgp4Pos[2], 2)
+  );
+
+  if (posDiff > 1000) { // More than 1 km difference at epoch
+    console.warn(`[Kepler Init] Large position difference at epoch: ${(posDiff/1000).toFixed(2)} km`);
+    console.warn(`  SGP4 pos (km): [${r[0].toFixed(2)}, ${r[1].toFixed(2)}, ${r[2].toFixed(2)}]`);
+    console.warn(`  Kepler pos (km): [${(keplerAtEpoch[0]/1000).toFixed(2)}, ${(keplerAtEpoch[1]/1000).toFixed(2)}, ${(keplerAtEpoch[2]/1000).toFixed(2)}]`);
+    console.warn(`  Osculating elements:`, {
+      a: osculatingElements.semiMajorAxis.toFixed(2),
+      e: osculatingElements.eccentricity.toFixed(6),
+      i: osculatingElements.inclination.toFixed(4),
+      raan: osculatingElements.raan.toFixed(4),
+      argP: osculatingElements.argOfPerigee.toFixed(4),
+      M0: (osculatingElements.meanAnomaly * 180 / Math.PI).toFixed(4),
+    });
+  }
+
+  return debugElements;
+}
+
+/**
+ * Internal version of propagateKeplerPosition for debugging
+ */
+function propagateKeplerPositionInternal(
+  orbitalElements: {
+    epochDate: Date;
+    semiMajorAxis: number;
+    eccentricity: number;
+    inclination: number;
+    raan: number;
+    argOfPerigee: number;
+    meanAnomalyAtEpoch: number;
+    meanMotion: number;
+  },
+  time: Date
+): [number, number, number] {
+  const elapsedTimeSec = (time.getTime() - orbitalElements.epochDate.getTime()) / 1000;
+  let meanAnomaly = (orbitalElements.meanAnomalyAtEpoch + orbitalElements.meanMotion * elapsedTimeSec) % TwoPi;
+  if (meanAnomaly < 0) meanAnomaly += TwoPi;
+
+  const eccentricAnomaly = solveEccentricAnomaly(meanAnomaly, orbitalElements.eccentricity, 1e-6);
+
+  return orbitalElementsToCartesian(
+    orbitalElements.semiMajorAxis,
+    orbitalElements.eccentricity,
+    orbitalElements.inclination,
+    orbitalElements.raan,
+    orbitalElements.argOfPerigee,
+    eccentricAnomaly
+  );
 }
 
 /**
@@ -382,7 +444,7 @@ function parseTLEMeanElements(line1: string, line2: string) {
  *
  * @param orbitalElements Orbital elements from parseTLEOrbitalElements
  * @param time Current time
- * @returns Position in ECI coordinates [x, y, z] in meters
+ * @returns Position in ECEF coordinates [x, y, z] in meters (compatible with Cesium)
  */
 export function propagateKeplerPosition(
   orbitalElements: ReturnType<typeof parseTLEOrbitalElements>,
@@ -392,8 +454,9 @@ export function propagateKeplerPosition(
   const elapsedTimeSec = (time.getTime() - orbitalElements.epochDate.getTime()) / 1000;
 
   // Update mean anomaly: M = M0 + n*t
-  const meanAnomaly = (orbitalElements.meanAnomalyAtEpoch +
+  let meanAnomaly = (orbitalElements.meanAnomalyAtEpoch +
                       orbitalElements.meanMotion * elapsedTimeSec) % TwoPi;
+  if (meanAnomaly < 0) meanAnomaly += TwoPi;
 
   // Solve for eccentric anomaly
   const eccentricAnomaly = solveEccentricAnomaly(
@@ -402,8 +465,8 @@ export function propagateKeplerPosition(
     1e-3 // Fast tolerance like ASTRIA
   );
 
-  // Convert to Cartesian coordinates
-  return orbitalElementsToCartesian(
+  // Convert to Cartesian coordinates (ECI frame, in meters)
+  const [xEci, yEci, zEci] = orbitalElementsToCartesian(
     orbitalElements.semiMajorAxis,
     orbitalElements.eccentricity,
     orbitalElements.inclination,
@@ -411,6 +474,40 @@ export function propagateKeplerPosition(
     orbitalElements.argOfPerigee,
     eccentricAnomaly
   );
+
+  // Convert ECI to ECEF (Earth-Centered Earth-Fixed) for Cesium compatibility
+  const gmst = satellite.gstime(time);
+  const cosGmst = Math.cos(gmst);
+  const sinGmst = Math.sin(gmst);
+
+  // Rotation from ECI to ECEF (rotation around Z-axis by GMST)
+  const xEcef = cosGmst * xEci + sinGmst * yEci;
+  const yEcef = -sinGmst * xEci + cosGmst * yEci;
+  const zEcef = zEci; // Z unchanged
+
+  return [xEcef, yEcef, zEcef];
+}
+
+/**
+ * Generate orbit path using Kepler propagation
+ * Returns array of ECEF positions for one complete orbit
+ */
+export function generateKeplerOrbitPath(
+  orbitalElements: ReturnType<typeof parseTLEOrbitalElements>,
+  startTime: Date,
+  durationSeconds: number,
+  stepSeconds: number = 30
+): Cesium.Cartesian3[] {
+  const positions: Cesium.Cartesian3[] = [];
+  const numSteps = Math.floor(durationSeconds / stepSeconds);
+
+  for (let i = 0; i <= numSteps; i++) {
+    const time = new Date(startTime.getTime() + i * stepSeconds * 1000);
+    const [x, y, z] = propagateKeplerPosition(orbitalElements, time);
+    positions.push(new Cesium.Cartesian3(x, y, z));
+  }
+
+  return positions;
 }
 
 /**
