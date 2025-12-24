@@ -298,29 +298,29 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
           orbitPathRef.current = null;
         }
 
-        // Find the debris object to get orbital period
-        const debrisObject = debris.find(d => d.noradId === noradId);
-        const orbitPeriod = debrisObject?.orbitPeriod || 5400; // Default to 90 minutes
-
-        // Generate orbit path for one orbital period
+        // Generate 24-hour orbit path
         const currentTime = Cesium.JulianDate.toDate(viewer.clock.currentTime);
-        const samplingInterval = Math.max(Math.floor(orbitPeriod / 200), 10);
+        const duration = 86400; // 24 hours in seconds
+        const samplingInterval = 60; // Sample every 60 seconds for smooth path
 
-        // Generate SGP4 orbit path (CYAN)
-        const sgp4OrbitPositions = generateOrbitPath(selectedPos.satrec, currentTime, orbitPeriod, samplingInterval);
+        // Generate SGP4 orbit path (GREEN DASHED)
+        const sgp4OrbitPositions = generateOrbitPath(selectedPos.satrec, currentTime, duration, samplingInterval);
 
         if (sgp4OrbitPositions.length >= 2) {
           const orbitEntity = viewer.entities.add({
             name: `Orbit path for ${selectedPos.name}`,
             polyline: {
               positions: sgp4OrbitPositions,
-              width: 3,
-              material: Cesium.Color.CYAN.withAlpha(0.8),
+              width: 2,
+              material: new Cesium.PolylineDashMaterialProperty({
+                color: Cesium.Color.LIME.withAlpha(0.8),
+                dashLength: 16,
+              }),
               clampToGround: false,
             },
           });
           orbitPathRef.current = orbitEntity;
-          console.log(`Orbit path: ${sgp4OrbitPositions.length} positions for ${orbitPeriod}s period`);
+          console.log(`Orbit path: ${sgp4OrbitPositions.length} positions for 24-hour period`);
         }
 
       } else {
