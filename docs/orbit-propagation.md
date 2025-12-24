@@ -134,33 +134,80 @@ Kepler propagation only accounts for:
 - Orbital plane precession
 - Argument of perigee rotation
 
-### How We Convert TLEs to Keplerian Elements
+### How We Convert TLEs to Osculating Keplerian Elements
 
-Even though Kepler propagation is simplified, we still start from TLE data to get initial orbital elements.
+**Important:** TLE mean elements are specifically fitted for SGP4's perturbation model and *cannot* be used directly as Keplerian orbital elements. Using TLE mean elements directly causes immediate divergence at initialization, not just gradual drift from missing perturbations.
 
 **See implementation:** [`src/utils/kepler-propagation.ts`](../src/utils/kepler-propagation.ts)
 
-#### Step 1: Parse TLE for Orbital Elements
+#### The Proper Approach: RV2COE Algorithm
+
+We use the **RV2COE (Position-Velocity to Classical Orbital Elements)** algorithm from Vallado's "Fundamentals of Astrodynamics and Applications" (Algorithm 9):
+
+1. **Parse TLE with SGP4** - Use satellite.js to parse the TLE
+2. **Propagate to epoch (t=0)** - Get position/velocity vectors at the TLE epoch time
+3. **Convert to osculating elements** - Use RV2COE to compute actual Keplerian elements
 
 ```typescript
 function parseTLEOrbitalElements(line1: string, line2: string) {
-  // Extract from Line 2:
-  const inclination = parseFloat(line2.substring(8, 16));    // degrees
-  const raan = parseFloat(line2.substring(17, 25));          // degrees (Ω)
-  const eccentricity = parseFloat('0.' + line2.substring(26, 33));
-  const argOfPerigee = parseFloat(line2.substring(34, 42));  // degrees (ω)
-  const meanAnomalyDeg = parseFloat(line2.substring(43, 51)); // degrees (M0)
-  const meanMotion = parseFloat(line2.substring(52, 63));    // rev/day (n)
+  // Parse TLE using satellite.js
+  const satrec = satellite.twoline2satrec(line1, line2);
 
-  // Calculate semi-major axis from mean motion using Kepler's 3rd law:
-  // n = sqrt(GM/a³) → a = (GM/n²)^(1/3)
-  const GM = 398600.4418; // km³/s² (Earth's standard gravitational parameter)
-  const meanMotionRadPerSec = (meanMotion * 2π) / 86400;
-  const semiMajorAxis = (GM / meanMotionRadPerSec²)^(1/3); // km
+  // Use SGP4 to get position/velocity at epoch (t=0)
+  const positionAndVelocity = satellite.propagate(satrec, epochDate);
 
-  return { semiMajorAxis, eccentricity, inclination, raan, argOfPerigee, meanAnomalyAtEpoch, meanMotion };
+  // Convert to arrays for RV2COE (in km and km/s)
+  const r = [positionEci.x, positionEci.y, positionEci.z];
+  const v = [velocityEci.x, velocityEci.y, velocityEci.z];
+
+  // Convert state vector to osculating orbital elements
+  const osculatingElements = rv2coe(r, v);
+
+  return {
+    semiMajorAxis: osculatingElements.semiMajorAxis,
+    eccentricity: osculatingElements.eccentricity,
+    inclination: osculatingElements.inclination,
+    // ... other elements
+  };
 }
 ```
+
+#### RV2COE Implementation
+
+The RV2COE algorithm computes classical orbital elements from position (**r**) and velocity (**v**) vectors:
+
+```typescript
+function rv2coe(r: number[], v: number[]) {
+  // Angular momentum: h = r × v
+  const h = vecCross(r, v);
+
+  // Eccentricity vector: e = ((v² - μ/r)·r - (r·v)·v) / μ
+  const eVec = vecScale(vecSub(
+    vecScale(r, vMag*vMag - GM/rMag),
+    vecScale(v, vecDot(r, v))
+  ), 1/GM);
+  const eccentricity = vecMag(eVec);
+
+  // Semi-major axis: a = -μ / (2ε) where ε = v²/2 - μ/r
+  const energy = vMag*vMag/2 - GM/rMag;
+  const semiMajorAxis = -GM / (2 * energy);
+
+  // Inclination: i = acos(h_z / |h|)
+  const inclination = acos(h[2] / vecMag(h));
+
+  // RAAN, arg of perigee, and true anomaly from geometry...
+  // (see full implementation in kepler-propagation.ts)
+}
+```
+
+This ensures both propagators **start from the same physical state**. The divergence then correctly reflects only the missing perturbations in the Kepler model, not incorrect initial conditions.
+
+#### Why This Matters
+
+| Approach | Initial Position Error | After 1 Hour |
+|----------|----------------------|--------------|
+| TLE mean elements (wrong) | ~10-100 km | Compounds with time |
+| Osculating elements (correct) | ~0 km | Only perturbation drift |
 
 **Key orbital elements:**
 - **a** (semi-major axis): size of the orbit
