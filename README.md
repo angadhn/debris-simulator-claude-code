@@ -1,87 +1,106 @@
-# Space Debris Visualization & Capture Simulator
+# Space Debris Visualization Platform
 
-A browser-based platform for visualizing space debris and simulating capture systems using CesiumJS for orbital visualization and Three.js + MuJoCo for physics simulation.
+A browser-based platform for visualizing 25,000+ tracked orbital objects in real-time using CesiumJS. Features dual propagation modes (SGP4 and Kepler), interactive orbit visualization, and educational tools for understanding orbital mechanics.
 
-## Phase 1 Status ✅
+## Live Features
 
-- **Project Setup**: React + TypeScript + Vite ✅
-- **Dependencies**: Cesium, Three.js, Zustand installed ✅
-- **Project Structure**: Component organization according to spec ✅
-- **Cesium Integration**: Earth visualization with basic camera controls ✅
-- **View Switching**: Toggle between Orbital and Simulation views ✅
+### Orbital Visualization
+- **25,000+ tracked objects** from Space-Track catalog (satellites, rocket bodies, debris)
+- **Real-time propagation** using SGP4 (accurate) or Kepler 2-body (fast) modes
+- **24-hour orbit paths** displayed as green dashed lines when selecting objects
+- **Color-coded objects** by type (payload, rocket body, debris)
+
+### Interactive Controls
+- **Click any object** to view its orbital path and information
+- **Play/pause animation** with adjustable speed (1x to 1000x)
+- **First-person camera mode** - ride along with a satellite
+- **Search** by name or NORAD ID
+
+### Filtering
+- **Object type filters** (payloads, rocket bodies, debris)
+- **Size filters** (small, medium, large based on RCS)
+- **Orbit regime filters** (LEO, MEO, GEO)
+- **Country filters** (filter by launching country)
+
+### Propagation Modes
+- **SGP4**: Industry-standard propagation including J2 perturbations, drag, and third-body effects
+- **Kepler**: Fast 2-body propagation for performance-critical visualization
+
+See [docs/orbit-propagation.md](docs/orbit-propagation.md) for technical details on the propagation methods.
+
+### Mobile Support
+- Responsive UI with collapsible filter panel
+- Touch-friendly controls
+- Welcome tutorial for new users
 
 ## Quick Start
 
-1. **Get a free Cesium Ion token** (optional but recommended):
-   - Visit https://cesium.com/ion/
-   - Create a free account
-   - Copy your access token
-
-2. **Configure the token**:
-   ```bash
-   # Edit .env file
-   VITE_CESIUM_ION_TOKEN=your_actual_token_here
-   ```
-
-3. **Install and run**:
+1. **Install dependencies**:
    ```bash
    npm install
+   ```
+
+2. **Configure Cesium token** (optional but recommended):
+   ```bash
+   # Edit .env file
+   VITE_CESIUM_ION_TOKEN=your_token_here
+   ```
+   Get a free token at https://cesium.com/ion/
+
+3. **Run the development server**:
+   ```bash
    npm run dev
    ```
 
-4. **Open your browser** to http://localhost:5173
-
-## Current Features
-
-### Orbital View (Cesium)
-- 3D Earth globe with high-quality imagery
-- Space-optimized camera controls
-- Dark space background
-- View switcher to toggle between Orbital/Simulation modes
-
-### Simulation View (Placeholder)
-- Ready for Three.js + MuJoCo implementation
-- Placeholder UI shows future physics simulation area
+4. **Open** http://localhost:5173
 
 ## Project Structure
 
 ```
 src/
 ├── components/
-│   ├── cesium/           # Cesium orbital visualization
-│   │   └── OrbitalViewer.tsx
-│   ├── simulation/       # Three.js physics simulation  
-│   │   └── SimulationViewer.tsx
-│   └── ui/              # Interface components
-│       └── ViewSwitcher.tsx
-├── stores/              # Zustand state management
+│   ├── cesium/              # Cesium orbital visualization
+│   │   ├── OrbitalViewer.tsx
+│   │   └── DebrisLayer.tsx  # Main debris rendering & propagation
+│   ├── ui/                  # Interface components
+│   │   ├── DebrisSearchPanel.tsx
+│   │   ├── MobileToolbar.tsx
+│   │   └── WelcomeTutorial.tsx
+│   └── simulation/          # Three.js physics (placeholder)
+├── services/
+│   └── debris-api.ts        # Space-Track data fetching
+├── stores/                  # Zustand state management
 │   ├── ui-store.ts
 │   └── debris-store.ts
-└── types/               # TypeScript definitions
-    ├── debris.ts
-    └── simulation.ts
+├── utils/
+│   ├── orbital-propagation.ts   # SGP4 propagation utilities
+│   └── kepler-propagation.ts    # Kepler 2-body propagation
+└── types/
+    └── debris.ts
 ```
-
-## Next Steps (Phase 1 Completion)
-
-- [ ] Space-Track API integration for real debris data
-- [ ] TLE parsing and orbital propagation with satellite.js
-- [ ] Debris visualization as points on the globe
-- [ ] Object selection and info panels
-- [ ] Orbit path visualization
-- [ ] Timeline controls for animation
-- [ ] Basic collision simulation setup
 
 ## Technology Stack
 
 - **Frontend**: React 18 + TypeScript + Vite
-- **Orbital Visualization**: CesiumJS + ion imagery
-- **Physics Simulation**: Three.js + @react-three/fiber + MuJoCo WASM (planned)
+- **Orbital Visualization**: CesiumJS
 - **State Management**: Zustand
-- **Orbital Mechanics**: satellite.js for SGP4/SDP4 propagation
+- **Orbital Mechanics**: satellite.js (SGP4/SDP4), custom Kepler implementation
+- **Data Source**: Space-Track TLE catalog
+
+## Documentation
+
+- [Orbital Propagation Methods](docs/orbit-propagation.md) - Technical details on SGP4 vs Kepler propagation
+- [Project Specification](space-debris-simulator-spec-v2.md) - Full three-phase implementation plan
+
+## Future Plans
+
+- Phase 2: Capture system simulation with Three.js + MuJoCo
+- Phase 3: Flexible body dynamics for nets and tethers
 
 ## Development
 
-The project follows the [specification document](./space-debris-simulator-spec-v2.md) which details the full three-phase implementation plan.
-
-Current phase focuses on getting basic visualization working before adding complexity.
+```bash
+npm run dev      # Start development server
+npm run build    # Production build
+npm run preview  # Preview production build
+```
