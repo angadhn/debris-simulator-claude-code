@@ -369,6 +369,77 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
     };
   }, [viewer]);
 
+  // Draw orbit path when selectedDebrisId changes (from click OR search selection)
+  useEffect(() => {
+    if (!viewer) return;
+
+    // Clear existing orbit path
+    if (orbitPathRef.current) {
+      viewer.entities.remove(orbitPathRef.current);
+      orbitPathRef.current = null;
+    }
+
+    if (!selectedDebrisId) return;
+
+    // First try debrisPositionsRef (fast path for clicked items)
+    let selectedPos = debrisPositionsRef.current.find(
+      (p) => parseInt(p.noradId) === selectedDebrisId
+    );
+
+    // If not found in positions, look up from debris store directly (for search selections)
+    if (!selectedPos || !selectedPos.satrec) {
+      const debrisObj = debris.find((d) => d.noradId === selectedDebrisId);
+      if (debrisObj && debrisObj.tle) {
+        try {
+          const satrec = satellite.twoline2satrec(debrisObj.tle.line1, debrisObj.tle.line2);
+          selectedPos = {
+            noradId: debrisObj.noradId.toString(),
+            name: debrisObj.name,
+            objectType: debrisObj.objectType,
+            position: new Cesium.Cartesian3(0, 0, 0), // Placeholder
+            satrec,
+          };
+          console.log(`Generated satrec for ${debrisObj.name} from TLE`);
+        } catch (err) {
+          console.error(`Failed to parse TLE for ${debrisObj.name}:`, err);
+          return;
+        }
+      }
+    }
+
+    if (!selectedPos || !selectedPos.satrec) {
+      console.warn(`Could not find debris or satrec for orbit: ${selectedDebrisId}`);
+      return;
+    }
+
+    console.log(`Drawing orbit for ${selectedPos.name} (NORAD ${selectedDebrisId})`);
+
+    // Generate 24-hour orbit path
+    const currentTime = Cesium.JulianDate.toDate(viewer.clock.currentTime);
+    const duration = 86400; // 24 hours in seconds
+    const samplingInterval = 60; // Sample every 60 seconds for smooth path
+
+    // Generate SGP4 orbit path (GREEN DASHED)
+    const sgp4OrbitPositions = generateOrbitPath(selectedPos.satrec, currentTime, duration, samplingInterval);
+
+    if (sgp4OrbitPositions.length >= 2) {
+      const orbitEntity = viewer.entities.add({
+        name: `Orbit path for ${selectedPos.name}`,
+        polyline: {
+          positions: sgp4OrbitPositions,
+          width: 2,
+          material: new Cesium.PolylineDashMaterialProperty({
+            color: Cesium.Color.LIME.withAlpha(0.8),
+            dashLength: 16,
+          }),
+          clampToGround: false,
+        },
+      });
+      orbitPathRef.current = orbitEntity;
+      console.log(`Orbit path: ${sgp4OrbitPositions.length} positions for 24-hour period`);
+    }
+  }, [viewer, selectedDebrisId, debris]);
+
   // Camera focus on selected debris
   useEffect(() => {
     if (!viewer || !selectedDebrisId) return;
