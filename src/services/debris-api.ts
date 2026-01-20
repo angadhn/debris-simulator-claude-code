@@ -95,17 +95,21 @@ export class DebrisAPI {
   /**
    * Search objects by name
    */
-  static async searchByName(name: string, limit: number = 10): Promise<TLEData[]> {
+  static async searchByName(
+    name: string,
+    limit: number = 10,
+    offset: number = 0
+  ): Promise<{ data: TLEData[]; total: number }> {
     try {
       const response = await axios.get<{ query: string; count: number; data: TLEData[] }>(
         `${API_BASE_URL}/api/search`,
         {
-          params: { name, limit },
+          params: { name, limit, offset },
           timeout: 30000,
         }
       );
       console.log(`Found ${response.data.count} objects matching "${name}"`);
-      return response.data.data;
+      return { data: response.data.data, total: response.data.count };
     } catch (error) {
       console.error('Failed to search objects:', error);
       throw new Error(`Failed to search objects: ${error}`);

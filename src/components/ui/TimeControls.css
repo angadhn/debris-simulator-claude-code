@@ -137,8 +137,15 @@
 }
 
 .control-btn.reset {
-  flex: 0.6;
+  flex: 0.8;
   font-size: 18px;
+}
+
+.control-btn.speed {
+  flex: 1.2;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
 }
 
 /* Embedded mode - for inline positioning in search panel */

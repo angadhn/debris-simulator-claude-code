@@ -23,7 +23,11 @@ export function CollapsibleSearchButton({ onSearch }: CollapsibleSearchButtonPro
   const clearSearchResults = useDebrisStore((state) => state.clearSearchResults);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [totalSearchResults, setTotalSearchResults] = useState(0);
+  const [searchOffset, setSearchOffset] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const SEARCH_LIMIT = 10;
 
   const handleToggleExpand = () => {
     setSearchExpanded(!searchExpanded);
@@ -32,8 +36,10 @@ export function CollapsibleSearchButton({ onSearch }: CollapsibleSearchButtonPro
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearchQuery(query);
-    // Clear search results when user starts typing a new search
+    // Clear search results and reset pagination when user starts typing a new search
     clearSearchResults();
+    setTotalSearchResults(0);
+    setSearchOffset(0);
     onSearch(query); // Local filter
   };
 
@@ -45,13 +51,15 @@ export function CollapsibleSearchButton({ onSearch }: CollapsibleSearchButtonPro
       try {
         setIsSearching(true);
         clearSearchResults();
-        const results = await DebrisAPI.searchByName(query, 10);
+        setSearchOffset(0);
+        const { data: results, total } = await DebrisAPI.searchByName(query, SEARCH_LIMIT, 0);
+        setTotalSearchResults(total);
 
         if (results.length > 0) {
           // Convert TLE data to DebrisObject format
           const debrisObjects = convertTLEArrayToDebrisObjects(results);
 
-          if (debrisObjects.length === 1) {
+          if (debrisObjects.length === 1 && total === 1) {
             // Single result: auto-add and select
             addDebrisObjects(debrisObjects);
             setSelectedDebrisId(debrisObjects[0].noradId);
@@ -59,7 +67,8 @@ export function CollapsibleSearchButton({ onSearch }: CollapsibleSearchButtonPro
           } else {
             // Multiple results: show in list for user to choose
             setSearchResults(debrisObjects);
-            console.log(`Found ${debrisObjects.length} objects matching "${query}"`);
+            setSearchOffset(SEARCH_LIMIT);
+            console.log(`Found ${total} objects matching "${query}", showing first ${debrisObjects.length}`);
           }
         } else {
           console.log(`No objects found matching "${query}"`);
@@ -69,6 +78,28 @@ export function CollapsibleSearchButton({ onSearch }: CollapsibleSearchButtonPro
       } finally {
         setIsSearching(false);
       }
+    }
+  };
+
+  const handleLoadMore = async () => {
+    const query = searchQuery.trim();
+    if (query.length < 3) return;
+
+    try {
+      setIsLoadingMore(true);
+      const { data: results } = await DebrisAPI.searchByName(query, SEARCH_LIMIT, searchOffset);
+
+      if (results.length > 0) {
+        const debrisObjects = convertTLEArrayToDebrisObjects(results);
+        // Append to existing results
+        setSearchResults([...searchResults, ...debrisObjects]);
+        setSearchOffset(searchOffset + results.length);
+        console.log(`Loaded ${results.length} more results`);
+      }
+    } catch (error) {
+      console.error('Load more failed:', error);
+    } finally {
+      setIsLoadingMore(false);
     }
   };
 
@@ -156,7 +187,11 @@ export function CollapsibleSearchButton({ onSearch }: CollapsibleSearchButtonPro
           {/* Dropdown for search results and time controls */}
           {(searchResults.length > 0 || selectedDebrisId) && (
             <div className="mobile-search-dropdown">
-              <SearchResultsList />
+              <SearchResultsList
+                hasMore={searchResults.length < totalSearchResults}
+                onLoadMore={handleLoadMore}
+                isLoadingMore={isLoadingMore}
+              />
               {selectedDebrisId && cesiumViewer && (
                 <TimeControls viewer={cesiumViewer} embedded />
               )}

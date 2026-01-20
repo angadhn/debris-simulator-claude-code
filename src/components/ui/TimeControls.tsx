@@ -42,16 +42,11 @@ export function TimeControls({ viewer, embedded = false }: TimeControlsProps) {
     setIsAnimating(!isAnimating);
   };
 
-  const handleSpeedChange = (direction: 'slower' | 'faster') => {
-    if (direction === 'faster' && multiplierIndex < TIME_MULTIPLIERS.length - 1) {
-      const newIndex = multiplierIndex + 1;
-      setMultiplierIndex(newIndex);
-      setAnimationSpeed(TIME_MULTIPLIERS[newIndex]);
-    } else if (direction === 'slower' && multiplierIndex > 0) {
-      const newIndex = multiplierIndex - 1;
-      setMultiplierIndex(newIndex);
-      setAnimationSpeed(TIME_MULTIPLIERS[newIndex]);
-    }
+  const handleSpeedCycle = () => {
+    // Cycle to next speed (wrap around to start)
+    const newIndex = (multiplierIndex + 1) % TIME_MULTIPLIERS.length;
+    setMultiplierIndex(newIndex);
+    setAnimationSpeed(TIME_MULTIPLIERS[newIndex]);
   };
 
   const handleReset = () => {
@@ -144,12 +139,11 @@ export function TimeControls({ viewer, embedded = false }: TimeControlsProps) {
 
       <div className="control-buttons">
         <button
-          className="control-btn"
-          onClick={() => handleSpeedChange('slower')}
-          disabled={multiplierIndex === 0 || !isAnimating}
-          title="Slower"
+          className="control-btn reset"
+          onClick={handleReset}
+          title="Reset time and clear selection"
         >
-          ◄◄
+          ⏹
         </button>
 
         <button
@@ -161,20 +155,11 @@ export function TimeControls({ viewer, embedded = false }: TimeControlsProps) {
         </button>
 
         <button
-          className="control-btn"
-          onClick={() => handleSpeedChange('faster')}
-          disabled={multiplierIndex === TIME_MULTIPLIERS.length - 1 || !isAnimating}
-          title="Faster"
+          className="control-btn speed"
+          onClick={handleSpeedCycle}
+          title="Click to cycle speed"
         >
-          ►►
-        </button>
-
-        <button
-          className="control-btn reset"
-          onClick={handleReset}
-          title="Stop animation and clear selection"
-        >
-          ⏹
+          {formatSpeed(currentMultiplier)}
         </button>
       </div>
     </div>
