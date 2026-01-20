@@ -140,3 +140,38 @@
   flex: 0.6;
   font-size: 18px;
 }
+
+/* Embedded mode - for inline positioning in search panel */
+.time-controls.embedded {
+  position: relative;
+  bottom: auto;
+  right: auto;
+  margin-top: 12px;
+  width: 100%;
+  min-width: unset;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 12px;
+  box-shadow: none;
+  background: transparent;
+  border-radius: 0;
+}
+
+.time-controls.embedded .time-display {
+  border-bottom: none;
+  padding-bottom: 8px;
+}
+
+.time-controls.embedded .control-buttons {
+  gap: 6px;
+}
+
+.time-controls.embedded .control-btn {
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.time-controls.embedded .info-panel {
+  margin-top: 6px;
+  padding: 10px;
+  font-size: 11px;
+}

@@ -5,11 +5,12 @@ import './TimeControls.css';
 
 interface TimeControlsProps {
   viewer: Cesium.Viewer | null;
+  embedded?: boolean; // For inline positioning in search panel
 }
 
 const TIME_MULTIPLIERS = [60, 300, 600, 1800, 3600]; // 1 min, 5 min, 10 min, 30 min, 1 hour per second
 
-export function TimeControls({ viewer }: TimeControlsProps) {
+export function TimeControls({ viewer, embedded = false }: TimeControlsProps) {
   const selectedDebrisId = useDebrisStore((state) => state.selectedDebrisId);
   const isAnimating = useDebrisStore((state) => state.isAnimating);
   const setIsAnimating = useDebrisStore((state) => state.setIsAnimating);
@@ -85,7 +86,7 @@ export function TimeControls({ viewer }: TimeControlsProps) {
   }
 
   return (
-    <div className="time-controls">
+    <div className={`time-controls ${embedded ? 'embedded' : ''}`}>
       <div className="time-display">
         <div className="current-time">{formatTime(currentTime)}</div>
         <div className="time-speed">

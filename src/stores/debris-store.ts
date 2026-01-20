@@ -49,6 +49,7 @@ interface DebrisStore {
   totalObjectsAvailable: number;
   isAnimating: boolean;
   animationSpeed: number; // Multiplier for time (1 = real-time, 60 = 1 min per second)
+  searchResults: DebrisObject[]; // Results from Space-Track search
 
   setDebris: (debris: DebrisObject[]) => void;
   setLoading: (loading: boolean) => void;
@@ -63,6 +64,8 @@ interface DebrisStore {
   setTotalObjectsAvailable: (total: number) => void;
   setIsAnimating: (isAnimating: boolean) => void;
   setAnimationSpeed: (speed: number) => void;
+  setSearchResults: (results: DebrisObject[]) => void;
+  clearSearchResults: () => void;
 }
 
 const createDefaultSizeFilters = (): TypeSizeFilters => ({
@@ -109,6 +112,7 @@ export const useDebrisStore = create<DebrisStore>((set) => ({
   totalObjectsAvailable: 0,
   isAnimating: false,
   animationSpeed: 60, // Default: 1 minute per second
+  searchResults: [],
 
   setDebris: (debris) => set({ debris }),
   setLoading: (loading) => set({ loading }),
@@ -130,4 +134,6 @@ export const useDebrisStore = create<DebrisStore>((set) => ({
   setTotalObjectsAvailable: (totalObjectsAvailable) => set({ totalObjectsAvailable }),
   setIsAnimating: (isAnimating) => set({ isAnimating }),
   setAnimationSpeed: (animationSpeed) => set({ animationSpeed }),
+  setSearchResults: (searchResults) => set({ searchResults }),
+  clearSearchResults: () => set({ searchResults: [] }),
 }));

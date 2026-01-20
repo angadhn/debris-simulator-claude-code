@@ -6,7 +6,6 @@ import { DebrisLayer } from './DebrisLayer';
 import { useDebrisData } from '../../hooks/useDebrisData';
 import { DebrisLegend } from '../ui/DebrisLegend';
 import { DebrisInfoPanel } from '../ui/DebrisInfoPanel';
-import { TimeControls } from '../ui/TimeControls';
 import { DebrisSearchPanel } from '../ui/DebrisSearchPanel';
 import { useDebrisStore } from '../../stores/debris-store';
 
@@ -284,7 +283,6 @@ export function OrbitalViewer({ className = '' }: OrbitalViewerProps) {
                 onOrbitFilterChange={setOrbitFilters}
               />
               <DebrisInfoPanel />
-              <TimeControls viewer={viewerRef.current} />
             </>
           )}
         </>

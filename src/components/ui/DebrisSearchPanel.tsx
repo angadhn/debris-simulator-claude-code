@@ -3,6 +3,8 @@ import { DebrisAPI } from '../../services/debris-api';
 import { useDebrisStore } from '../../stores/debris-store';
 import { useUIStore } from '../../stores/ui-store';
 import { convertTLEArrayToDebrisObjects } from '../../utils/tle-converter';
+import { SearchResultsList } from './SearchResultsList';
+import { TimeControls } from './TimeControls';
 import './DebrisSearchPanel.css';
 
 interface DebrisSearchPanelProps {
@@ -22,8 +24,13 @@ export function DebrisSearchPanel({
   const addDebrisObjects = useDebrisStore((state) => state.addDebrisObjects);
   const countryFilters = useDebrisStore((state) => state.countryFilters);
   const setCountryFilters = useDebrisStore((state) => state.setCountryFilters);
+  const setSearchResults = useDebrisStore((state) => state.setSearchResults);
+  const clearSearchResults = useDebrisStore((state) => state.clearSearchResults);
+  const setSelectedDebrisId = useDebrisStore((state) => state.setSelectedDebrisId);
+  const selectedDebrisId = useDebrisStore((state) => state.selectedDebrisId);
   const propagationMode = useUIStore((state) => state.propagationMode);
   const setPropagationMode = useUIStore((state) => state.setPropagationMode);
+  const cesiumViewer = useUIStore((state) => state.cesiumViewer);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [realTotalCount, setRealTotalCount] = useState<number | null>(null);
@@ -63,6 +70,8 @@ export function DebrisSearchPanel({
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearchQuery(query);
+    // Clear search results when user starts typing a new search
+    clearSearchResults();
     // Apply local filter immediately as user types
     onSearch(query);
   };
@@ -74,14 +83,23 @@ export function DebrisSearchPanel({
     if (query.length >= 3) {
       try {
         setIsSearching(true);
+        clearSearchResults();
         const results = await DebrisAPI.searchByName(query, 10);
 
         if (results.length > 0) {
           // Convert TLE data to DebrisObject format
           const debrisObjects = convertTLEArrayToDebrisObjects(results);
-          // Add to store (duplicates will be filtered out)
-          addDebrisObjects(debrisObjects);
-          console.log(`Added ${debrisObjects.length} objects from search to visualization`);
+
+          if (debrisObjects.length === 1) {
+            // Single result: auto-add and select
+            addDebrisObjects(debrisObjects);
+            setSelectedDebrisId(debrisObjects[0].noradId);
+            console.log(`Auto-selected: ${debrisObjects[0].name} (NORAD ${debrisObjects[0].noradId})`);
+          } else {
+            // Multiple results: show in list for user to choose
+            setSearchResults(debrisObjects);
+            console.log(`Found ${debrisObjects.length} objects matching "${query}"`);
+          }
         } else {
           console.log(`No objects found matching "${query}"`);
         }
@@ -246,6 +264,14 @@ export function DebrisSearchPanel({
           </span>
         </div>
       </div>
+
+      {/* Search Results List */}
+      <SearchResultsList />
+
+      {/* Embedded Time Controls - shown when a satellite is selected */}
+      {selectedDebrisId && cesiumViewer && (
+        <TimeControls viewer={cesiumViewer} embedded />
+      )}
     </div>
   );
 }
