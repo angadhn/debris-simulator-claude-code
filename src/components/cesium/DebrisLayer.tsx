@@ -71,7 +71,28 @@ export function DebrisLayer({ viewer }: DebrisLayerProps) {
 
       // Orbit range filter (using apogee in km)
       const apogee = d.apogee || 0;
-      if (apogee < 2000 && !orbitFilters.leo) return false;
+      const inclination = d.inclination || 0;
+
+      // LEO filter with sub-filters
+      if (apogee < 2000) {
+        if (!orbitFilters.leo) return false;
+        // Apply inclination sub-filters only when expanded
+        if (orbitFilters.leoExpanded) {
+          const isSSO = inclination >= 96 && inclination <= 99;
+          const isPolar = inclination >= 80 && inclination < 96; // Polar excluding SSO
+          const isISS = inclination >= 50 && inclination <= 53;
+          const isEquatorial = inclination >= 0 && inclination <= 15;
+          const isOther = !isSSO && !isPolar && !isISS && !isEquatorial;
+
+          if (isSSO && !orbitFilters.leoSub.sso) return false;
+          if (isPolar && !orbitFilters.leoSub.polar) return false;
+          if (isISS && !orbitFilters.leoSub.iss) return false;
+          if (isEquatorial && !orbitFilters.leoSub.equatorial) return false;
+          if (isOther && !orbitFilters.leoSub.other) return false;
+        }
+      }
+
+      // MEO and GEO filters
       if (apogee >= 2000 && apogee < 35000 && !orbitFilters.meo) return false;
       if (apogee >= 35000 && !orbitFilters.geo) return false;
 

@@ -2,8 +2,18 @@ import { useState } from 'react';
 import { useDebrisStore } from '../../stores/debris-store';
 import './DebrisLegend.css';
 
+interface LeoSubFilters {
+  sso: boolean;
+  polar: boolean;
+  iss: boolean;
+  equatorial: boolean;
+  other: boolean;
+}
+
 interface OrbitFilters {
   leo: boolean;
+  leoExpanded: boolean;
+  leoSub: LeoSubFilters;
   meo: boolean;
   geo: boolean;
 }
@@ -27,9 +37,19 @@ export function DebrisLegend({ objectCounts, orbitFilters, onOrbitFilterChange, 
   const filters = useDebrisStore((state) => state.filters);
   const setFilters = useDebrisStore((state) => state.setFilters);
 
-  const handleOrbitFilterToggle = (orbit: keyof OrbitFilters) => {
+  const handleOrbitFilterToggle = (orbit: 'leo' | 'meo' | 'geo') => {
     const newFilters = { ...orbitFilters, [orbit]: !orbitFilters[orbit] };
     onOrbitFilterChange(newFilters);
+  };
+
+  const handleLeoExpandToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onOrbitFilterChange({ ...orbitFilters, leoExpanded: !orbitFilters.leoExpanded });
+  };
+
+  const handleLeoSubFilterToggle = (subFilter: keyof LeoSubFilters) => {
+    const newLeoSub = { ...orbitFilters.leoSub, [subFilter]: !orbitFilters.leoSub[subFilter] };
+    onOrbitFilterChange({ ...orbitFilters, leoSub: newLeoSub });
   };
 
   const handleTypeToggle = (type: 'payload' | 'rocketBody' | 'debris' | 'unknown') => {
@@ -83,14 +103,88 @@ export function DebrisLegend({ objectCounts, orbitFilters, onOrbitFilterChange, 
           <div className="filter-section">
             <div className="filter-section-title">Orbit Range</div>
             <div className="filter-options">
-              <label className={`filter-checkbox ${orbitFilters.leo ? 'active' : ''}`}>
-                <input
-                  type="checkbox"
-                  checked={orbitFilters.leo}
-                  onChange={() => handleOrbitFilterToggle('leo')}
-                />
-                <span>LEO (&lt;2,000 km)</span>
-              </label>
+              {/* LEO with expandable sub-filters */}
+              <div className="orbit-filter-group">
+                <div className="orbit-filter-row">
+                  <label className={`filter-checkbox ${orbitFilters.leo ? 'active' : ''}`}>
+                    <input
+                      type="checkbox"
+                      checked={orbitFilters.leo}
+                      onChange={() => handleOrbitFilterToggle('leo')}
+                    />
+                    <span>LEO (&lt;2,000 km)</span>
+                  </label>
+                  {orbitFilters.leo && (
+                    <button
+                      className="orbit-expand-btn"
+                      onClick={handleLeoExpandToggle}
+                      title="Filter by inclination"
+                    >
+                      {orbitFilters.leoExpanded ? '▲' : '▼'}
+                    </button>
+                  )}
+                </div>
+                {orbitFilters.leo && orbitFilters.leoExpanded && (
+                  <div className="leo-sub-filters">
+                    <label
+                      className={`sub-filter-checkbox ${orbitFilters.leoSub.sso ? 'active' : ''}`}
+                      title="Sun-Synchronous Orbit: 96-99° inclination"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={orbitFilters.leoSub.sso}
+                        onChange={() => handleLeoSubFilterToggle('sso')}
+                      />
+                      <span>SSO (96-99°)</span>
+                    </label>
+                    <label
+                      className={`sub-filter-checkbox ${orbitFilters.leoSub.polar ? 'active' : ''}`}
+                      title="Polar Orbit: 80-100° inclination (excludes SSO)"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={orbitFilters.leoSub.polar}
+                        onChange={() => handleLeoSubFilterToggle('polar')}
+                      />
+                      <span>Polar (80-96°)</span>
+                    </label>
+                    <label
+                      className={`sub-filter-checkbox ${orbitFilters.leoSub.iss ? 'active' : ''}`}
+                      title="ISS-type Orbit: 50-53° inclination"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={orbitFilters.leoSub.iss}
+                        onChange={() => handleLeoSubFilterToggle('iss')}
+                      />
+                      <span>ISS-type (50-53°)</span>
+                    </label>
+                    <label
+                      className={`sub-filter-checkbox ${orbitFilters.leoSub.equatorial ? 'active' : ''}`}
+                      title="Equatorial LEO: 0-15° inclination"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={orbitFilters.leoSub.equatorial}
+                        onChange={() => handleLeoSubFilterToggle('equatorial')}
+                      />
+                      <span>Equatorial (0-15°)</span>
+                    </label>
+                    <label
+                      className={`sub-filter-checkbox ${orbitFilters.leoSub.other ? 'active' : ''}`}
+                      title="Other LEO inclinations"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={orbitFilters.leoSub.other}
+                        onChange={() => handleLeoSubFilterToggle('other')}
+                      />
+                      <span>Other LEO</span>
+                    </label>
+                  </div>
+                )}
+              </div>
+
               <label className={`filter-checkbox ${orbitFilters.meo ? 'active' : ''}`}>
                 <input
                   type="checkbox"

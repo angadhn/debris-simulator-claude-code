@@ -31,8 +31,18 @@ interface DebrisFilters {
   };
 }
 
+interface LeoSubFilters {
+  sso: boolean;      // Sun-Synchronous: 96-99° inclination
+  polar: boolean;    // Polar: 80-100° inclination
+  iss: boolean;      // ISS-type: 50-53° inclination
+  equatorial: boolean; // Equatorial: 0-15° inclination
+  other: boolean;    // Other LEO inclinations
+}
+
 interface OrbitFilters {
   leo: boolean;
+  leoExpanded: boolean;
+  leoSub: LeoSubFilters;
   meo: boolean;
   geo: boolean;
 }
@@ -104,6 +114,14 @@ export const useDebrisStore = create<DebrisStore>((set) => ({
   },
   orbitFilters: {
     leo: true,
+    leoExpanded: false,
+    leoSub: {
+      sso: true,
+      polar: true,
+      iss: true,
+      equatorial: true,
+      other: true,
+    },
     meo: true,
     geo: true,
   },

@@ -402,6 +402,72 @@
   line-height: 1.4;
 }
 
+/* LEO sub-filters */
+.filter-panel-content .orbit-filter-group {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.filter-panel-content .orbit-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.filter-panel-content .orbit-expand-btn {
+  background: none;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 10px;
+  padding: 8px;
+  transition: color 0.2s;
+}
+
+.filter-panel-content .orbit-expand-btn:hover {
+  color: white;
+}
+
+.filter-panel-content .leo-sub-filters {
+  margin-top: 6px;
+  margin-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 10px;
+  border-left: 2px solid rgba(74, 144, 226, 0.3);
+}
+
+.filter-panel-content .sub-filter-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  font-size: 12px;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.filter-panel-content .sub-filter-checkbox:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.filter-panel-content .sub-filter-checkbox input[type="checkbox"] {
+  cursor: pointer;
+  width: 14px;
+  height: 14px;
+}
+
+.filter-panel-content .sub-filter-checkbox.active {
+  background: rgba(74, 144, 226, 0.15);
+  border-color: rgba(74, 144, 226, 0.4);
+}
+
 /* Touch-friendly adjustments */
 @media (hover: none) and (pointer: coarse) {
   .filter-checkbox,
@@ -412,6 +478,15 @@
 
   .filter-panel-close-button,
   .legend-item .expand-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .filter-panel-content .sub-filter-checkbox {
+    min-height: 44px;
+  }
+
+  .filter-panel-content .orbit-expand-btn {
     min-width: 44px;
     min-height: 44px;
   }

@@ -3,8 +3,18 @@ import { useUIStore } from '../../stores/ui-store';
 import { useDebrisStore } from '../../stores/debris-store';
 import './FilterPanel.css';
 
+interface LeoSubFilters {
+  sso: boolean;
+  polar: boolean;
+  iss: boolean;
+  equatorial: boolean;
+  other: boolean;
+}
+
 interface OrbitFilters {
   leo: boolean;
+  leoExpanded: boolean;
+  leoSub: LeoSubFilters;
   meo: boolean;
   geo: boolean;
 }
@@ -58,9 +68,19 @@ export function FilterPanel({ objectCounts, orbitFilters, onOrbitFilterChange }:
     }
   };
 
-  const handleOrbitFilterToggle = (orbit: keyof OrbitFilters) => {
+  const handleOrbitFilterToggle = (orbit: 'leo' | 'meo' | 'geo') => {
     const newFilters = { ...orbitFilters, [orbit]: !orbitFilters[orbit] };
     onOrbitFilterChange(newFilters);
+  };
+
+  const handleLeoExpandToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onOrbitFilterChange({ ...orbitFilters, leoExpanded: !orbitFilters.leoExpanded });
+  };
+
+  const handleLeoSubFilterToggle = (subFilter: keyof LeoSubFilters) => {
+    const newLeoSub = { ...orbitFilters.leoSub, [subFilter]: !orbitFilters.leoSub[subFilter] };
+    onOrbitFilterChange({ ...orbitFilters, leoSub: newLeoSub });
   };
 
   const handleCountryToggle = (countryCode: string) => {
@@ -147,7 +167,27 @@ export function FilterPanel({ objectCounts, orbitFilters, onOrbitFilterChange }:
 
       // Orbit range filter
       const apogee = d.apogee || 0;
-      if (apogee < 2000 && !orbitFilters.leo) return false;
+      const inclination = d.inclination || 0;
+
+      // LEO filter with sub-filters
+      if (apogee < 2000) {
+        if (!orbitFilters.leo) return false;
+        if (orbitFilters.leoExpanded) {
+          const isSSO = inclination >= 96 && inclination <= 99;
+          const isPolar = inclination >= 80 && inclination < 96;
+          const isISS = inclination >= 50 && inclination <= 53;
+          const isEquatorial = inclination >= 0 && inclination <= 15;
+          const isOther = !isSSO && !isPolar && !isISS && !isEquatorial;
+
+          if (isSSO && !orbitFilters.leoSub.sso) return false;
+          if (isPolar && !orbitFilters.leoSub.polar) return false;
+          if (isISS && !orbitFilters.leoSub.iss) return false;
+          if (isEquatorial && !orbitFilters.leoSub.equatorial) return false;
+          if (isOther && !orbitFilters.leoSub.other) return false;
+        }
+      }
+
+      // MEO and GEO filters
       if (apogee >= 2000 && apogee < 35000 && !orbitFilters.meo) return false;
       if (apogee >= 35000 && !orbitFilters.geo) return false;
 
@@ -213,14 +253,73 @@ export function FilterPanel({ objectCounts, orbitFilters, onOrbitFilterChange }:
           <div className="filter-section">
             <div className="filter-section-title">Orbit Range</div>
             <div className="filter-options">
-              <label className={`filter-checkbox ${orbitFilters.leo ? 'active' : ''}`}>
-                <input
-                  type="checkbox"
-                  checked={orbitFilters.leo}
-                  onChange={() => handleOrbitFilterToggle('leo')}
-                />
-                <span>LEO (&lt;2,000 km)</span>
-              </label>
+              {/* LEO with expandable sub-filters */}
+              <div className="orbit-filter-group">
+                <div className="orbit-filter-row">
+                  <label className={`filter-checkbox ${orbitFilters.leo ? 'active' : ''}`}>
+                    <input
+                      type="checkbox"
+                      checked={orbitFilters.leo}
+                      onChange={() => handleOrbitFilterToggle('leo')}
+                    />
+                    <span>LEO (&lt;2,000 km)</span>
+                  </label>
+                  {orbitFilters.leo && (
+                    <button
+                      className="orbit-expand-btn"
+                      onClick={handleLeoExpandToggle}
+                      title="Filter by inclination"
+                    >
+                      {orbitFilters.leoExpanded ? '▲' : '▼'}
+                    </button>
+                  )}
+                </div>
+                {orbitFilters.leo && orbitFilters.leoExpanded && (
+                  <div className="leo-sub-filters">
+                    <label className={`sub-filter-checkbox ${orbitFilters.leoSub.sso ? 'active' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={orbitFilters.leoSub.sso}
+                        onChange={() => handleLeoSubFilterToggle('sso')}
+                      />
+                      <span>SSO (96-99°)</span>
+                    </label>
+                    <label className={`sub-filter-checkbox ${orbitFilters.leoSub.polar ? 'active' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={orbitFilters.leoSub.polar}
+                        onChange={() => handleLeoSubFilterToggle('polar')}
+                      />
+                      <span>Polar (80-96°)</span>
+                    </label>
+                    <label className={`sub-filter-checkbox ${orbitFilters.leoSub.iss ? 'active' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={orbitFilters.leoSub.iss}
+                        onChange={() => handleLeoSubFilterToggle('iss')}
+                      />
+                      <span>ISS-type (50-53°)</span>
+                    </label>
+                    <label className={`sub-filter-checkbox ${orbitFilters.leoSub.equatorial ? 'active' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={orbitFilters.leoSub.equatorial}
+                        onChange={() => handleLeoSubFilterToggle('equatorial')}
+                      />
+                      <span>Equatorial (0-15°)</span>
+                    </label>
+                    <label className={`sub-filter-checkbox ${orbitFilters.leoSub.other ? 'active' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={orbitFilters.leoSub.other}
+                        onChange={() => handleLeoSubFilterToggle('other')}
+                      />
+                      <span>Other LEO</span>
+                    </label>
+                  </div>
+                )}
+              </div>
+
               <label className={`filter-checkbox ${orbitFilters.meo ? 'active' : ''}`}>
                 <input
                   type="checkbox"
