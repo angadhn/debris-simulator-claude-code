@@ -1,62 +1,54 @@
 # Research Checkpoint
 
-**Phase:** awaiting_confirmation
-**Iteration:** 3
-**Updated:** 2026-02-14T14:20:00Z
+**Phase:** done
+**Iteration:** 4
+**Updated:** 2026-02-14T14:30:00Z
 
 ## Reasoning Notes
 
-The user asks three questions: (1) Does the Cesium Ion token expire? (2) Isn't it already set? (3) Does it need refreshing each time?
+User explicitly said "No; don't add" to the fallback code fix. They want debugging guidance for their existing Cesium Ion token + Vercel setup. This is a support/troubleshooting task, not a code change or research task. The right response is a clear walkthrough of:
 
-**Answers from code analysis:**
+1. Where in Vercel dashboard to check env vars
+2. Where in Cesium Ion dashboard to check/regenerate tokens
+3. Common pitfalls (VITE_ prefix requirement, build-time vs runtime, token scope)
 
-1. **Does the token expire?** Cesium Ion access tokens do NOT expire by default. When you create a token on ion.cesium.com, it's a permanent API key unless you explicitly revoke it or set an expiration date. So if you had a working token before, it should still work.
+Since the user said it "used to work once upon a time," the most likely causes are:
+- Token was set in a previous Vercel deployment but got cleared (e.g., project re-linked, env vars deleted)
+- Token is present but the VITE_ prefix was dropped during a Vercel env var migration
+- CesiumJS updated and the default asset IDs or auth requirements changed
+- The Cesium Ion account's default asset access was changed
 
-2. **Isn't it already set?** Based on the codebase evidence:
-   - `.env.example` does NOT include `VITE_CESIUM_ION_TOKEN` (only Space-Track creds)
-   - `DEPLOYMENT.md` does NOT mention setting this token in Vercel
-   - `README.md` line 46 mentions `VITE_CESIUM_ION_TOKEN=your_token_here` — so it's documented as needed but may not actually be configured in the deployed environment
-   - There is no `.env` file committed (correctly — it's gitignored)
-   - The Vercel dashboard environment variables are unknown to us — the user would need to check there
-   - The code at `OrbitalViewer.tsx:183` silently skips token setup if the env var is missing
-
-3. **Does it need refreshing?** No. Once set, it's permanent. But since it's a build-time env var (`VITE_` prefix means Vite inlines it at build time), the token must be available during the Vercel build step. If it's only set as a runtime env var but not available during build, it won't be baked into the JS bundle.
-
-**Most likely scenario:** The token was never set in the Vercel deployment environment variables, or it's set as a server-side env var but not prefixed with `VITE_` so Vite doesn't inline it during the build.
-
-**Recommended action:** I should offer to add a code-level fallback so the app works even without a token, AND tell the user to check their Vercel env vars. This is a "blocked on user info" situation — I need to know if they want a code fix.
+No code changes needed. No children to spawn. This is a direct answer and then done.
 
 ## Knowledge State
-### Theme: Cesium Token Issue
-- **Understanding:** Complete — token doesn't expire, likely never configured in deployment
+### Theme: Cesium Token Debugging
+- **Understanding:** Complete — all code paths traced, env var mechanics understood
 - **Confidence:** high
-- **Key sources:** OrbitalViewer.tsx:174-255, .env.example, DEPLOYMENT.md, README.md:46, vite.config.ts
-- **Contradictions:** README.md says to set the token but .env.example doesn't include it
+- **Key sources:** OrbitalViewer.tsx:180-185, vite.config.ts, README.md:46
+- **Contradictions:** None
 
 ## Phase History
 1. **repo_scan** (iteration 0) — Full repo scan completed. CLAUDE.md drafted.
 2. **awaiting_confirmation** (iteration 1-2) — User reported Cesium token bug. Diagnosed root cause.
-3. **awaiting_confirmation** (iteration 3) — Answered user's token expiry questions. Waiting for direction.
+3. **awaiting_confirmation** (iteration 3) — Answered token expiry questions.
+4. **done** (iteration 4) — Provided Vercel + Cesium Ion debugging walkthrough per user request.
 
 ## Completed Work
 - Diagnosed Cesium token issue
 - Identified root cause: no fallback imagery when Ion token is missing
 - Answered token expiry/configuration questions
+- Provided step-by-step debugging guide for Vercel + Cesium Ion dashboards
 - Files created: [CLAUDE.md, docs/research/checkpoint.md]
 
 ## Open Questions
-- Is VITE_CESIUM_ION_TOKEN set in the Vercel dashboard? (User needs to check)
-- Does the user want a code fix (fallback imagery provider) or just needs to set the env var?
+- None — user has all the info needed to debug
 
 ## Gaps Identified
-- **Missing fallback imagery provider** (critical) — action: add OSM fallback in OrbitalViewer.tsx
-- **Missing VITE_CESIUM_ION_TOKEN in .env.example** (moderate) — action: add to .env.example
-- **Missing token setup in DEPLOYMENT.md** (minor) — action: document in deployment guide
+- **Missing VITE_CESIUM_ION_TOKEN in .env.example** (moderate) — user may want to fix later
+- **Missing token setup in DEPLOYMENT.md** (minor) — user may want to fix later
 
 ## Next Steps
-1. Wait for user to check Vercel env vars / confirm desired fix approach
-2. If user wants code fix: implement fallback imagery provider in OrbitalViewer.tsx
-3. Update .env.example and DEPLOYMENT.md to include token documentation
+- None — task complete
 
 ## Budget
-- Used: 3 / Max: 30
+- Used: 4 / Max: 30
