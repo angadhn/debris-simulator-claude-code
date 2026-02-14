@@ -208,7 +208,6 @@ export function OrbitalViewer({ className = '' }: OrbitalViewerProps) {
         console.log('Cesium viewer created successfully');
 
         // Load imagery: try Ion first, fall back to bundled NaturalEarthII
-        let usingFallbackImagery = false;
         try {
           if (token && token !== 'your_cesium_ion_token_here') {
             Cesium.Ion.defaultAccessToken = token;
@@ -220,7 +219,6 @@ export function OrbitalViewer({ className = '' }: OrbitalViewerProps) {
           }
         } catch (e) {
           console.warn('Cesium Ion imagery unavailable, using offline NaturalEarth fallback:', e);
-          usingFallbackImagery = true;
           try {
             const fallback = await Cesium.TileMapServiceImageryProvider.fromUrl(
               Cesium.buildModuleUrl('Assets/Textures/NaturalEarthII')
