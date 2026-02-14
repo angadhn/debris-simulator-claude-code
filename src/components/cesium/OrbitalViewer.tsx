@@ -205,23 +205,14 @@ export function OrbitalViewer({ className = '' }: OrbitalViewerProps) {
           selectionIndicator: false,
           navigationHelpButton: false,
           navigationInstructionsInitiallyVisible: false,
-          baseLayer: false, // Don't auto-load Ion imagery (fails without valid token)
         });
 
         console.log('Cesium viewer created successfully');
 
-        // Load imagery: try Ion first, fall back to bundled NaturalEarthII
-        try {
-          if (token && token !== 'your_cesium_ion_token_here') {
-            Cesium.Ion.defaultAccessToken = token;
-            const ionImagery = await Cesium.IonImageryProvider.fromAssetId(2);
-            viewer.imageryLayers.addImageryProvider(ionImagery);
-            console.log('Using Cesium Ion (Bing Maps) imagery');
-          } else {
-            throw new Error('No valid Cesium Ion token');
-          }
-        } catch (e) {
-          console.warn('Cesium Ion imagery unavailable, using offline NaturalEarth fallback:', e);
+        // If no valid token, replace default (broken) imagery with offline fallback
+        if (!token || token === 'your_cesium_ion_token_here') {
+          console.warn('No valid Cesium Ion token, using offline NaturalEarth fallback');
+          viewer.imageryLayers.removeAll();
           try {
             const fallback = await Cesium.TileMapServiceImageryProvider.fromUrl(
               Cesium.buildModuleUrl('Assets/Textures/NaturalEarthII')
@@ -229,7 +220,6 @@ export function OrbitalViewer({ className = '' }: OrbitalViewerProps) {
             viewer.imageryLayers.addImageryProvider(fallback);
           } catch (fallbackErr) {
             console.warn('NaturalEarth fallback also failed:', fallbackErr);
-            // Globe will render as a plain ellipsoid — still functional
           }
         }
 
