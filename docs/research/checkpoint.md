@@ -1,22 +1,26 @@
 # Research Checkpoint
 
-**Phase:** awaiting_confirmation
-**Iteration:** 5
-**Updated:** 2026-02-14T13:54:00Z
+**Phase:** done
+**Iteration:** 6
+**Updated:** 2026-02-14T14:10:00Z
 
 ## Reasoning Notes
 
-User is returning to the Cesium token debugging thread. They asked "Can you look into the console logs or can I send them to you here?" — meaning they have browser console output from their deployed/local app that shows errors, and want help interpreting it.
+User pasted their console log output. Two distinct problems are visible:
 
-I cannot access their browser console remotely. The right answer is: "Yes, please paste them here and I'll analyze them." This is the most efficient path — the console output will likely show the exact Cesium error (401 auth failure, missing token, asset load failure, etc.) and we can diagnose precisely.
+**Problem 1: "Rendering 0 debris objects using SGP4 propagation"**
+This log comes from `DebrisLayer.tsx:121`. It means `filteredDebris.length === 0`. The `filteredDebris` array comes from `useDebrisStore().debris` after filtering. If `debris` is empty, it means `useDebrisData` either (a) failed to fetch from the backend API, or (b) the backend returned an empty array. The most likely cause on Vercel: the Space-Track credentials (`SPACETRACK_USERNAME`, `SPACETRACK_PASSWORD`) are not set in Vercel environment variables, so the `/api/tle/active` serverless function fails, causing `debris` to stay empty. The user may also not have the health check pass, meaning the entire fetch is skipped.
 
-I could also look at the codebase for any existing logging to predict what they'd see, but that's less useful than just reading the actual error output.
+**Problem 2: 401 INVALID_TOKEN from Cesium Ion**
+The request to `api.cesium.com/v1/assets/2/endpoint?access_token=...` returns `{"code":"INVALID_TOKEN","message":"Invalid access token"}`. This means the `VITE_CESIUM_ION_TOKEN` env var is set but its value is an expired or invalid JWT. The token in the URL (`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`) is a real JWT, so it was configured — it's just no longer valid. The user needs to generate a fresh token at https://ion.cesium.com/tokens.
+
+These are two independent issues. The globe won't render terrain/imagery (Cesium token), and no debris points appear (Space-Track data fetch failing).
 
 ## Knowledge State
-### Theme: Cesium Token Debugging
-- **Understanding:** Complete — all code paths traced, env var mechanics understood
+### Theme: Console Error Diagnosis
+- **Understanding:** Complete — both errors traced to root causes
 - **Confidence:** high
-- **Key sources:** OrbitalViewer.tsx:180-185, vite.config.ts, README.md:46
+- **Key sources:** DebrisLayer.tsx:121, OrbitalViewer.tsx:180-185, debris-api.ts:66-76, useDebrisData.ts:25-27
 - **Contradictions:** None
 
 ## Phase History
@@ -25,24 +29,27 @@ I could also look at the codebase for any existing logging to predict what they'
 3. **awaiting_confirmation** (iteration 3) — Answered token expiry questions.
 4. **done** (iteration 4) — Provided Vercel + Cesium Ion debugging walkthrough per user request.
 5. **awaiting_confirmation** (iteration 5) — User wants to share console logs for debugging. Waiting for paste.
+6. **done** (iteration 6) — Analyzed console log output. Diagnosed two independent issues.
 
 ## Completed Work
 - Diagnosed Cesium token issue
 - Identified root cause: no fallback imagery when Ion token is missing
 - Answered token expiry/configuration questions
 - Provided step-by-step debugging guide for Vercel + Cesium Ion dashboards
+- Analyzed user's console log: two bugs identified (expired Cesium token + empty debris data)
 - Files created: [CLAUDE.md, docs/research/checkpoint.md]
 
 ## Open Questions
-- None — user has all the info needed to debug
+- Are Space-Track credentials configured in Vercel env vars?
+- Was the Cesium Ion token generated recently or is it old?
 
 ## Gaps Identified
-- **Missing VITE_CESIUM_ION_TOKEN in .env.example** (moderate) — user may want to fix later
-- **Missing token setup in DEPLOYMENT.md** (minor) — user may want to fix later
+- None critical — both fixes are straightforward env var updates
 
 ## Next Steps
-1. Wait for user to paste console logs
-2. Analyze errors and provide targeted fix
+1. User regenerates Cesium Ion token and updates `VITE_CESIUM_ION_TOKEN` in Vercel
+2. User verifies Space-Track credentials in Vercel env vars
+3. Redeploy and test
 
 ## Budget
-- Used: 4 / Max: 30
+- Used: 5 / Max: 30
