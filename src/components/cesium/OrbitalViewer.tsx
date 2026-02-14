@@ -176,9 +176,12 @@ export function OrbitalViewer({ className = '' }: OrbitalViewerProps) {
         setLoading(true);
         setError(null);
 
-        // Token will be set below after viewer creation
+        // Set token before viewer creation so BaseLayerPicker uses it
         const token = import.meta.env.VITE_CESIUM_ION_TOKEN;
         console.log('Cesium token:', token ? 'Token provided' : 'No token');
+        if (token && token !== 'your_cesium_ion_token_here') {
+          Cesium.Ion.defaultAccessToken = token;
+        }
 
         console.log('Initializing Cesium viewer...');
         console.log('CESIUM_BASE_URL:', CESIUM_BASE_URL);
