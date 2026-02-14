@@ -176,13 +176,9 @@ export function OrbitalViewer({ className = '' }: OrbitalViewerProps) {
         setLoading(true);
         setError(null);
 
-        // Set Cesium Ion token
+        // Token will be set below after viewer creation
         const token = import.meta.env.VITE_CESIUM_ION_TOKEN;
         console.log('Cesium token:', token ? 'Token provided' : 'No token');
-        
-        if (token && token !== 'your_cesium_ion_token_here') {
-          Cesium.Ion.defaultAccessToken = token;
-        }
 
         console.log('Initializing Cesium viewer...');
         console.log('CESIUM_BASE_URL:', CESIUM_BASE_URL);
@@ -206,9 +202,35 @@ export function OrbitalViewer({ className = '' }: OrbitalViewerProps) {
           selectionIndicator: false,
           navigationHelpButton: false,
           navigationInstructionsInitiallyVisible: false,
+          baseLayer: false, // Don't auto-load Ion imagery (fails without valid token)
         });
 
         console.log('Cesium viewer created successfully');
+
+        // Load imagery: try Ion first, fall back to bundled NaturalEarthII
+        let usingFallbackImagery = false;
+        try {
+          if (token && token !== 'your_cesium_ion_token_here') {
+            Cesium.Ion.defaultAccessToken = token;
+            const ionImagery = await Cesium.IonImageryProvider.fromAssetId(2);
+            viewer.imageryLayers.addImageryProvider(ionImagery);
+            console.log('Using Cesium Ion (Bing Maps) imagery');
+          } else {
+            throw new Error('No valid Cesium Ion token');
+          }
+        } catch (e) {
+          console.warn('Cesium Ion imagery unavailable, using offline NaturalEarth fallback:', e);
+          usingFallbackImagery = true;
+          try {
+            const fallback = await Cesium.TileMapServiceImageryProvider.fromUrl(
+              Cesium.buildModuleUrl('Assets/Textures/NaturalEarthII')
+            );
+            viewer.imageryLayers.addImageryProvider(fallback);
+          } catch (fallbackErr) {
+            console.warn('NaturalEarth fallback also failed:', fallbackErr);
+            // Globe will render as a plain ellipsoid — still functional
+          }
+        }
 
         // Configure for space visualization
         viewer.scene.globe.enableLighting = true;
