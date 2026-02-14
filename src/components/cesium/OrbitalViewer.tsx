@@ -202,6 +202,7 @@ export function OrbitalViewer({ className = '' }: OrbitalViewerProps) {
           selectionIndicator: false,
           navigationHelpButton: false,
           navigationInstructionsInitiallyVisible: false,
+          baseLayerPicker: false, // Disable picker — Ion options need valid token
           baseLayer: false, // Don't auto-load Ion imagery (fails without valid token)
         });
 
