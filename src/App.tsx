@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { useUIStore } from './stores/ui-store';
 import { useDebrisStore } from './stores/debris-store';
+import { DebrisAPI } from './services/debris-api';
+import { convertTLEArrayToDebrisObjects } from './utils/tle-converter';
 import { OrbitalViewer } from './components/cesium/OrbitalViewer';
 import { SimulationViewer } from './components/simulation/SimulationViewer';
 import { ViewSwitcher } from './components/ui/ViewSwitcher';
@@ -18,6 +20,9 @@ function App() {
   const setSearchQuery = useDebrisStore((state) => state.setSearchQuery);
   const orbitFilters = useDebrisStore((state) => state.orbitFilters);
   const setOrbitFilters = useDebrisStore((state) => state.setOrbitFilters);
+  const addDebrisObjects = useDebrisStore((state) => state.addDebrisObjects);
+  const setSelectedDebrisId = useDebrisStore((state) => state.setSelectedDebrisId);
+  const setSearchResults = useDebrisStore((state) => state.setSearchResults);
 
   // Get object counts for FilterPanel
   const objectCounts = useObjectCounts();
@@ -25,15 +30,39 @@ function App() {
   // Welcome tutorial
   const { showTutorial, openTutorial, closeTutorial } = useWelcomeTutorial();
 
-  // Hydrate the search filter from the ?q= URL param on mount. Lets
-  // external links (e.g. from Orbo, the Orbital Flight School TA) deep
-  // -link straight to a filtered view: /?q=starlink lands with the
-  // search box already filtering for "starlink". Non-breaking — if no
-  // ?q= param is present, nothing happens.
+  // Deep-link from external sites (e.g. the Orbital Flight School TA,
+  // Orbo) via /?q=<term>. Mirrors the search-button flow:
+  //   1. Set the in-memory search filter so loaded debris is filtered.
+  //   2. Hit /api/search to fetch matching satellites from Space-Track.
+  //   3. Add results to the debris store so the 3-D viewer renders them.
+  //   4. Single hit auto-selects; multiple hits land in the search list.
+  // Non-breaking — if no ?q= param is present, the effect is a no-op.
   useEffect(() => {
-    const q = new URLSearchParams(window.location.search).get('q');
-    if (q && q.trim()) setSearchQuery(q.trim());
-  }, [setSearchQuery]);
+    const q = new URLSearchParams(window.location.search).get('q')?.trim();
+    if (!q || q.length < 3) return;
+    setSearchQuery(q);
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: results, total } = await DebrisAPI.searchByName(q, 50, 0);
+        if (cancelled) return;
+        if (results.length === 0) return;
+        const debrisObjects = convertTLEArrayToDebrisObjects(results);
+        if (debrisObjects.length === 1 && total === 1) {
+          addDebrisObjects(debrisObjects);
+          setSelectedDebrisId(debrisObjects[0].noradId);
+        } else {
+          addDebrisObjects(debrisObjects);
+          setSearchResults(debrisObjects);
+        }
+      } catch (err) {
+        console.error('Deep-link search failed:', err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [setSearchQuery, addDebrisObjects, setSelectedDebrisId, setSearchResults]);
 
   return (
     <div className="app">
