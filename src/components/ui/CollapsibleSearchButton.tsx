@@ -21,7 +21,12 @@ export function CollapsibleSearchButton({ onSearch }: CollapsibleSearchButtonPro
   const setSearchResults = useDebrisStore((state) => state.setSearchResults);
   const searchResults = useDebrisStore((state) => state.searchResults);
   const clearSearchResults = useDebrisStore((state) => state.clearSearchResults);
-  const [searchQuery, setSearchQuery] = useState('');
+  // Seed from the Zustand store so deep-link arrivals (App.tsx reads
+  // ?q= on mount and writes it to the store) show the term in the
+  // search input. Lazy initializer — runs once on first render only.
+  const [searchQuery, setSearchQuery] = useState(
+    () => useDebrisStore.getState().searchQuery,
+  );
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [totalSearchResults, setTotalSearchResults] = useState(0);

@@ -33,7 +33,12 @@ export function DebrisSearchPanel({
   const setPropagationMode = useUIStore((state) => state.setPropagationMode);
   const cesiumViewer = useUIStore((state) => state.cesiumViewer);
 
-  const [searchQuery, setSearchQuery] = useState('');
+  // Seed from the Zustand store so deep-link arrivals (App.tsx reads
+  // ?q= on mount and writes it to the store) show the term in the
+  // search input. Lazy initializer — runs once on first render only.
+  const [searchQuery, setSearchQuery] = useState(
+    () => useDebrisStore.getState().searchQuery,
+  );
   const [realTotalCount, setRealTotalCount] = useState<number | null>(null);
   const [isLoadingCount, setIsLoadingCount] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
