@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useUIStore } from './stores/ui-store';
 import { useDebrisStore } from './stores/debris-store';
 import { OrbitalViewer } from './components/cesium/OrbitalViewer';
@@ -23,6 +24,16 @@ function App() {
 
   // Welcome tutorial
   const { showTutorial, openTutorial, closeTutorial } = useWelcomeTutorial();
+
+  // Hydrate the search filter from the ?q= URL param on mount. Lets
+  // external links (e.g. from Orbo, the Orbital Flight School TA) deep
+  // -link straight to a filtered view: /?q=starlink lands with the
+  // search box already filtering for "starlink". Non-breaking — if no
+  // ?q= param is present, nothing happens.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('q');
+    if (q && q.trim()) setSearchQuery(q.trim());
+  }, [setSearchQuery]);
 
   return (
     <div className="app">
